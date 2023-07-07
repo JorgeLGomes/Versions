@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+PATH=.:~/bin:/usr/local/nec/tools:/opt/NECcomp/compiler80/ia64/bin:/usr/local/nec/tools:/usr/psuite:/bin:/usr/bin:/usr/local/bin:/opt/NEChpf/bin:/opt/NECcomp/compiler80/ia64/bin:/usr/local/bin:/bin:/usr/bin:/usr/X11R6/bin:/usr/bin/nqsII
+
+SRC=fixgrb
+#
+FTNFLAG="-static -tpp1"
+#
+set -x
+efc $FTNFLAG -o $SRC $SRC.f
+#

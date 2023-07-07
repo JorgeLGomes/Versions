@@ -1,0 +1,2 @@
+00 02 * * *  ${HOME}/Versoes/eta/datain/scripts/gfs2gr0.25/Get+process.sh 00 0 72
+00 05 * * *  ${HOME}/Eta_install/Eta40km_wrkEta/scripts/start.sh 00 Cntrl

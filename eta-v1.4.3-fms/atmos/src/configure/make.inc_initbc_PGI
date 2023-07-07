@@ -1,0 +1,4 @@
+FC = ftn
+CC = /lib/cpp -traditional-cpp
+FFLAGS = -fast -DLITTLE
+CFLAGS = 

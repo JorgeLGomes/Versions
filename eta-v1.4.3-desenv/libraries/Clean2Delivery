@@ -1,0 +1,15 @@
+#!/bin/bash -x
+
+rm -f w3lib
+rm -f iplib
+rm -f bufrlib
+rm -f dummyMPI/libmpi.a
+
+cd dummyMPI
+make clean
+cd ../w3lib-1.9.source
+make clean
+cd ../iplib.source.le
+make clean
+cd ../ei_bufrlib.source
+make clean

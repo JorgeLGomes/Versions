@@ -1,0 +1,9 @@
+##########################
+#PBS -N FQNAME
+#PBS -l nodes=NNodes:ppn=NCpusNode
+#PBS -l walltime=04:50:00
+#PBS -q QFNAME
+#PBS -o EtaFcst.out
+#PBS -e EtaFcst.err
+##########################
+module load openmpi/4.1.1-gcc-9.4.0

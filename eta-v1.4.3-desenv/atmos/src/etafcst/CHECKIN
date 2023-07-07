@@ -1,0 +1,42 @@
+!--------------------------------------------------------------------------------------------------
+86645 FORMAT(' ENTER HZADV')
+      IEND = MYIE
+      IF (MOD(MYPE+1,INPES) .EQ. 0) IEND = MYIE-1
+      DO 86654 K=1,LM
+      DO 86653 J=MYJS,MYJE
+      DO 86653 I=MYIS,IEND
+      IF (HTM(I,J,K) .GT. 0.5) THEN
+        IF (T(I,J,K) .LT. 150. .OR. T(I,J,K) .GT. 335.) THEN
+          WRITE(6,86645)
+          WRITE(6,86650) I, J, K, T(I,J,K)
+86650     FORMAT(' I=',I3,' J=',I3,' K=',I2,' T=',E12.5)
+          STOP 666
+        ELSE IF (Q(I,J,K) .LT. -1.E-4 .OR. Q(I,J,K) .GT. 30.E-3) THEN
+          WRITE(6,86645)
+          WRITE(6,86651) I, J, K, Q(I,J,K)
+86651     FORMAT(' I=',I3,' J=',I3,' K=',I2,' Q=',E12.5)
+          STOP 666
+        ELSE IF (Q2(I,J,K) .GT. 400.)THEN
+          WRITE(6,86645)
+          WRITE(6,86751) I, J, K, Q2(I,J,K)
+86751     FORMAT(' I=',I3,' J=',I3,' K=',I2,' Q2=',E12.5)
+          STOP 666
+        ELSE IF (CWM(I,J,K) .GT. 1.E-1) THEN
+          WRITE(6,86645)
+          WRITE(6,86752) I, J, K, CWM(I,J,K)
+86752     FORMAT(' I=',I3,' J=',I3,' K=',I2,' CWM=',E12.5)
+          STOP 666
+        END IF
+      ENDIF
+86653 CONTINUE
+86654 CONTINUE
+      DO 86664 K=1,LM
+      DO 86663 J=MYJS,MYJE
+      DO 86663 I=MYIS,IEND
+      IF (ABS(U(I,J,K)) .GT. 125. .OR. ABS(V(I,J,K)) .GT. 125.) THEN
+        WRITE(6,86645)
+        WRITE(6,86662) I, J, K, U(I,J,K), V(I,J,K)
+86662   FORMAT(' I=',I3,' J=',I3,' K=',I2,' U=',E12.5,' V=',E12.5)
+      END IF
+86663 CONTINUE
+86664 CONTINUE

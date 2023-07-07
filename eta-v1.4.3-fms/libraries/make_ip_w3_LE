@@ -1,0 +1,9 @@
+#! /bin/csh -f
+
+cd ./w3lib.source.le
+make
+cd ../iplib.source.le
+make
+cd ../ei_bufrlib.source
+make
+exit

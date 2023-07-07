@@ -1,0 +1,7 @@
+export QUE1="pesq" # sequential process
+export QUE3="pesq" # post queue
+export QUE2="pesq" # forecast queue
+export ExecCmd1P="mpirun -n 1" # sequential process
+export nprp=1
+export ExecCmdNPP="mpirun -n ${nprp}" # post queue
+export ExecCmdNPF="mpirun -n \${npr} --oversubscribe" # forecast queue

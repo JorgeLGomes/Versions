@@ -1,0 +1,123 @@
+#!/bin/bash 
+
+
+# VARIAVEIS
+
+
+cd ${Eta_run}
+
+# head is used for symbolic links.  
+# head="ftn" for HP workstations
+# head="fort." for most (all?) others.
+
+head="fort."
+if [ ${restrt} == COLD ]  ; then #if not restrt
+rm -f ${head}*
+#Limpeza do diretorio run
+rm -f ${Eta_run}/preproc.*
+rm -f ${Eta_run}/sst12m.file
+rm -f ${Eta_run}/CNST.file
+rm -f ${Eta_run}/INIT.file
+rm -f ${Eta_run}/bndy.newstyle
+rm -f ${Eta_run}/BNDY.file
+fi
+EINTLM0D=`cat ${Eta_run}/ETAIN | grep TLM0D | cut -d= -f2`
+EINTPH0D=`cat ${Eta_run}/ETAIN | grep TPH0D | cut -d= -f2`
+EINIM=`cat ${Eta_run}/ETAIN | grep "IM=" | cut -d= -f2 |head -1`
+EINJM=`cat ${Eta_run}/ETAIN | grep "JM=" | cut -d= -f2`
+EINLM=`cat ${Eta_run}/ETAIN | grep "LM=" | cut -d= -f2`
+EINDLMD=`cat  ${Eta_run}/ETAIN | grep DLMD | cut -d= -f2`
+EINDPHD=`cat  ${Eta_run}/ETAIN | grep DPHD | cut -d= -f2`
+if [ -s ${Eta_scr}/CONF ]; then
+   CNFTLM0D=`cat ${Eta_scr}/CONF | grep Lon | awk '{print $2}'`
+   CNFTPH0D=`cat ${Eta_scr}/CONF | grep Lat | awk '{print $2}'`
+   CNFIM=`cat ${Eta_scr}/CONF | grep IM | awk '{print $2}'`
+   CNFJM=`cat ${Eta_scr}/CONF | grep JM |awk '{print $2}'`
+   CNFLM=`cat ${Eta_scr}/CONF | grep LM |awk '{print $2}'|head -1`
+   CNFDLMD=`cat  ${Eta_scr}/CONF | grep DLMD | awk '{print $2}'`
+   CNFDPHD=`cat  ${Eta_scr}/CONF | grep DPHD | awk '{print $2}'`
+fi
+if [ "${EINTLM0D}" != "${CNFTLM0D}" ] || [ "${EINTPH0D}" != "${CNFTPH0D}" ]  \
+|| [ "${EINIM}" != "${CNFIM}" ] || [ "${EINJM}" != "${CNFJM}" ]  \
+|| [ "${EINLM}" != "${CNFLM}" ] || [ "${EINDLMD}" != "${CNFDLMD}" ]  \
+|| [ "${EINDPHD}" != "${CNFDPHD}" ] 
+then
+   ${Eta_run}/Eta_fix.sh
+   err=$? 
+   echo value of err is $err 
+   if [ $err -ne 0 ] ; then
+     echo "FALHA!!!!!!! VERIFICAR output do script Eta_fix.sh "
+     exit 1
+   fi
+fi
+
+cp ${Eta_fix_conf}/ZEFF ${Eta_run}/ZEFF
+err=$?
+if [ $err -eq 0 ]
+then
+  echo " "
+  ${Eta_run}/Eta_sst.sh
+  echo " "
+  echo Starting eta initialization and bc file creation...
+  ##################################  
+  # Define o mapa de solo
+  if [ "${qtdtypsolo}" == "18" ] ; then
+    cp ${Eta_fix_conf}/SA_18SoilTypes_map_1km_2d.bin     ${Eta_run}/SoilMap_1km_2d.bin 
+  elif [ "${qtdtypsolo}" == "15" ] ; then
+    cp ${Eta_fix_conf}/Global_15SoilTypes_map_1km_2d.bin ${Eta_run}/SoilMap_1km_2d.bin 
+  fi
+    #
+    ##################################   
+    # 
+    # SOIL,VEG,SST and SNOW links
+    #
+    rm -f ${head}*
+    ln -s -f ${Eta_fix_conf}/deta                               deta
+    ln -s -f ${Eta_fix}/veg.eta.grb                            veg.eta.grb
+    ln -s -f ${Eta_fix}/maxsnoalb.bin                          maxsnoalb.bin
+    ln -s -f ${Eta_fix}/alb1_ieee                              alb1_ieee
+    ln -s -f ${Eta_fix}/alb2_ieee                              alb2_ieee
+    ln -s -f ${Eta_fix}/alb3_ieee                              alb3_ieee
+    ln -s -f ${Eta_fix}/alb4_ieee                              alb4_ieee
+    ln -s -f ${Eta_fix}/ivgtyp_1d_ieee                         ivgtyp_1d_ieee
+    ln -s -f ${Eta_fix}/isltyp_1d_ieee                         isltyp_1d_ieee
+    ln -s -f ${Eta_fix}/islope_1d_ieee                         islope_1d_ieee
+    ln -s -f ${Eta_fix}/rfusaflw_ieee                          rfusaflw_ieee
+    ln -s -f ${Eta_fix}/imsmask.ascii                          imsmask.ascii 
+    ln -s -f ${Eta_fix_conf}/vegmask2d_umd_proveg_radam.bin    vegmask2d_umd_proveg_radam.bin
+    ln -s -f ${data_veg}/FCOVER_rec_1999-2014.bin              FCOVER.bin
+    ln -s -f ${Eta_fix_conf}/deta                              ${head}16
+    ln -s -f ${Eta_fix}/maxsnoalb.bin                          ${head}20 
+    ln -s -f ${Eta_fix}/alb1_ieee                              ${head}21
+    ln -s -f ${Eta_fix}/alb2_ieee                              ${head}22
+    ln -s -f ${Eta_fix}/alb3_ieee                              ${head}23
+    ln -s -f ${Eta_fix}/alb4_ieee                              ${head}24
+    ln -s -f ${Eta_fix}/ivgtyp_1d_ieee                         ${head}30
+    ln -s -f ${Eta_fix}/isltyp_1d_ieee                         ${head}31
+    ln -s -f ${Eta_fix}/islope_1d_ieee                         ${head}32
+    ln -s -f ${Eta_datain}/sfcanl                              ${head}33
+    ln -s -f ${Eta_run}/sst_${Run_Date}.bin                    ${head}39
+    ln -s -f ${Eta_datain}/sstgrb.index                        ${head}40
+    ln -s -f ${Eta_fix}/rfusaflw_ieee                          ${head}42
+    ln -s -f ${Eta_fix}/imsmask.ascii                          ${head}43
+    ln -s -f ${Eta_fix_conf}/vegmask2d_umd_proveg_radam.bin     ${head}45
+    ln -s -f ${Eta_run}/SoilMap_1km_2d.bin                     ${head}49
+    ln -s -f ${Eta_run}/initial_soil_moist_1km_2d.bin          ${head}48
+    #
+    ####################################
+    ln -s -f veg.bin ${head}71
+    ExecCmd1P ${Eta_exe}/${InitBCexec//[[:space:]]} > initbc.out 2>&1
+    err=$? 
+    echo value of err is $err 
+    if [ $err -ne 0 ] ; then
+      echo "FALHA!!!!!!! VERIFICAR NO ARQUIVO /exe/initbc.exe"
+      exit 1
+    fi
+  fi
+# Limpeza
+rm -f ${Eta_run}/${CInit}_??????????.??????.ETAwrk
+rm -f ${Eta_run}/${BCond}_??????????.??????.ETAwrk
+rm -f ${Eta_run}/preproc.bc.??????
+rm -f ${Eta_run}/preproc.init
+
+exit 0

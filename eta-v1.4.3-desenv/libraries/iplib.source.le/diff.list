@@ -1,0 +1,320 @@
+/disk1/users/mpyle/worketa_unif/libraries/iplib.source.le
+78c78
+< CnotCDIR$ IVDEP
+---
+> CDIR$ IVDEP
+===== done gausslat.f ===== 
+===== done gcdist.f ===== 
+===== done gdsawt.f ===== 
+===== done gdswiz.f ===== 
+===== done gdswiz00.f ===== 
+===== done gdswiz01.f ===== 
+===== done gdswiz03.f ===== 
+===== done gdswiz04.f ===== 
+===== done gdswiz05.f ===== 
+===== done gdswizc9.f ===== 
+===== done gdswizca.f ===== 
+===== done gdswizcb.f ===== 
+===== done gdswzd.f ===== 
+===== done gdswzd00.f ===== 
+===== done gdswzd01.f ===== 
+===== done gdswzd03.f ===== 
+===== done gdswzd04.f ===== 
+===== done gdswzd05.f ===== 
+===== done gdswzdc9.f ===== 
+===== done gdswzdca.f ===== 
+===== done gdswzdcb.f ===== 
+===== done ijkgds.f ===== 
+145,146c145
+< Cmp      LOGICAL*1 LI(MI,KM),LO(MO,KM)
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+184c183
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done ipolates.f ===== 
+167c167
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+202c202
+< 	write(6,*) 'removed this option...try something other than spectral'
+---
+> 	write(6,*) 'removed this option...dont use spectral'
+214c214
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done ipolatev.f ===== 
+18d17
+< C   98-06-30  EBISUZAKI      LINUX PORT
+56,59c55
+< c       KGDS2(1:22)=KGDS1(1:22)
+<         do ii = 1, 22
+<             KGDS2(ii)=KGDS1(ii)
+<         end do
+---
+>         KGDS2(1:22)=KGDS1(1:22)
+65,68c61
+< c       KGDS1(1:22)=KGDS2(1:22)
+<         do ii = 1, 22
+<            KGDS1(ii)=KGDS2(ii)
+<         end do
+---
+>         KGDS1(1:22)=KGDS2(1:22)
+===== done ipxetas.f ===== 
+23d22
+< C   98-06-30  EBISUZAKI      LINUX PORT
+72,75c71
+< c         KGDS2(1:18)=KGDS1(1:18)
+<           do ii = 1, 18
+<             KGDS2(ii)=KGDS1(ii)
+<           end do
+---
+>           KGDS2(1:18)=KGDS1(1:18)
+100,103c96
+< c         KGDS1(1:18)=KGDS2(1:18)
+<           do ii = 1, 18
+<             KGDS1(ii)=KGDS2(ii)
+<           end do
+---
+>           KGDS1(1:18)=KGDS2(1:18)
+118,121c111
+< c         KGDS1(1:18)=KGDS2(1:18)
+<           do ii = 1, 18
+<             KGDS1(i)=KGDS2(ii)
+<           end do
+---
+>           KGDS1(1:18)=KGDS2(1:18)
+128,131c118
+< c           KGDS1(22:94)=NPWAFS
+<             do ii = 1, 73
+<               KGDS1(21+ii)=NPWAFS(ii)
+<             enddo
+---
+>             KGDS1(22:94)=NPWAFS
+133,136c120
+< c           KGDS1(22:94)=NPWAFS(73:1:-1)
+<             do ii = 1, 73
+<               KGDS1(21+ii)=NPWAFS(74-ii)
+<             enddo
+---
+>             KGDS1(22:94)=NPWAFS(73:1:-1)
+===== done ipxwafs.f ===== 
+===== done ipxwafs2.f ===== 
+===== done makgds.f ===== 
+===== done movect.f ===== 
+161c161
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polateg0.f ===== 
+131c131
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+204c204
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+275c275
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+346c346
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+433c433
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+451c451
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polateg1.f ===== 
+81c81
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+134c134
+< CnotCMIC$ DO ALL AUTOSCOPE PRIVATE(WO)
+---
+> CMIC$ DO ALL AUTOSCOPE PRIVATE(WO)
+===== done polates0.f ===== 
+88c88
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+109c109
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+151c151
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+190c190
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+229c229
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+278c278
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+297c297
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polates1.f ===== 
+81c81
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+111c111
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polates2.f ===== 
+90c90
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+129c129
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+187c187
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+221c221
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polates3.f ===== 
+===== done polates5.f ===== 
+91c91
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+129c129
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+166c166
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+181c181
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polates6.f ===== 
+99c99
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+173c173
+< CnotCMIC$ DO ALL AUTOSCOPE PRIVATE(WO)
+---
+> CMIC$ DO ALL AUTOSCOPE PRIVATE(WO)
+===== done polatev0.f ===== 
+106c106
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+132c132
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+193c193
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+258c258
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+323c323
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+400c400
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+430c430
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polatev1.f ===== 
+99c99
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+139c139
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polatev2.f ===== 
+103c103
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+147c147
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+223c223
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+276c276
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polatev3.f ===== 
+103c103
+<       LOGICAL LI(MI,KM),LO(MO,KM)
+---
+>       LOGICAL*1 LI(MI,KM),LO(MO,KM)
+145c145
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+188c188
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+204c204
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polatev6.f ===== 
+38c38
+<       LOGICAL LO(NX,KM)
+---
+>       LOGICAL*1 LO(NX,KM)
+40c40
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polfixs.f ===== 
+40c40
+<       LOGICAL LO(NX,KM)
+---
+>       LOGICAL*1 LO(NX,KM)
+50c50
+< CnotCMIC$ DO ALL AUTOSCOPE
+---
+> CMIC$ DO ALL AUTOSCOPE
+===== done polfixv.f ===== 
+===== done test_log.f ===== 

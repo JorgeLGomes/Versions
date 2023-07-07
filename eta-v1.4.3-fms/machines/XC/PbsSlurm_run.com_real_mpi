@@ -1,0 +1,8 @@
+##########################
+#PBS -j oe
+#PBS -l PROCCNF
+#PBS -l walltime=04:50:00
+#PBS -N FQNAME
+#PBS -q QFNAME
+#PBS -o EtaFcst.out
+##########################

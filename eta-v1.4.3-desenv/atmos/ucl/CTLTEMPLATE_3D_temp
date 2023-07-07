@@ -1,0 +1,23 @@
+DSET ^NARQ
+OPTIONS TEMPLATE
+UNDEF -9999.
+TITLE 29help Days of Sample Model Output
+XDEF  ptx LINEAR  lonoeste   0.01
+YDEF  pty LINEAR  latsul   0.01
+ZDEF 22 LEVELS 1020 1000 950 925 900 850 800
+                  750  700 650 600 550 500
+                  450  400 350 300 250 200 
+                  150  100 50
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 10 
+ZGEO   22  99     Geopotential height      (m)
+UVEL   22  99     Zonal wind               (m/s)
+VVEL   22  99     Meridional wind          (m/s)
+TEMP   22  99     Temperature              (K)
+UMRL   22  99     Relative Humidity        (%)
+OMEG   22  99     Omega                    (hPa/s)
+UMES   22  99     Specific humidity        (kg/kg)
+PSAT   22  99     Equiv. Pot. Temp.        (K)
+WTNV   22  99     Cloud Water              (kg/kg)
+ITNV   22  99     Cloud Ice                (kg/kg)
+ENDVARS

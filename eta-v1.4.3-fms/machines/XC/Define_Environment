@@ -1,0 +1,20 @@
+QSB="/opt/pbs/default/bin/qsub"
+#
+ExecCmd1P="aprun -n 1"
+ExecCmdNPP="aprun -n NCPUS"
+ExecCmdNPF="aprun -n \${npr}"
+# 
+export QUE1="pesq"
+#
+# etafcst
+export QUE2="pesq"
+export NCpusNode=40
+#
+# etapost
+export QUE3="pesq"
+export NNodesPos=1
+export NCpusNodePos=40
+#
+export cdoPath="/lustre_xc50/manoel_baptista/modules/software/cdo-1.9.6/bin"
+export gradsPath="/lustre_xc50/jorge_gomes/Eta_support_data/util/grads/2.1.a1/bin"
+export DIRSUPPORT="/lustre_xc50/jorge_gomes/Eta_support_data"

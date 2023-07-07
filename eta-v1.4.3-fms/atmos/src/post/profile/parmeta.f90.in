@@ -1,0 +1,6 @@
+    module parmeta
+!
+! Number of Vertical Layers
+!
+      integer, parameter         :: LM=lmin
+    end module parmeta

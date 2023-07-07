@@ -1,0 +1,376 @@
+#!/bin/bash 
+
+
+# VARIAVEIS
+cd ${Eta_scr}
+
+Run_Date1=${Run_Date}
+let Fctp1=${Fct}+1
+if [ ${restrt} == COLD ] ; then #if not restrt
+dlmd=`${Eta_scr}/def_eta.scr ${Res}|awk '{print $1}'`
+dphd=`${Eta_scr}/def_eta.scr ${Res}|awk '{print $2}'`
+dt=`${Eta_scr}/def_eta.scr ${Res}|awk '{print $3}'`
+nphs=`${Eta_scr}/def_eta.scr ${Res}|awk '{print $4}'`
+ncnv=`${Eta_scr}/def_eta.scr ${Res}|awk '{print $5}'`
+hydro=`${Eta_scr}/def_eta.scr ${Res}|awk '{print $6}'`
+CInit_Lowercase=`echo ${CInit}|awk '{print tolower($1)}'`
+BCond_Lowercase=`echo ${BCond}|awk '{print tolower($1)}'`
+extprep=".ETAwrk"
+let ninit=${Fct}/${InitBC}
+let ninit=${ninit}+1
+
+iyear=`echo ${Run_Date} | cut -c1-4`
+imonth=`echo ${Run_Date} | cut -c5-6`
+iday=`echo ${Run_Date} | cut -c7-8`
+ih=`echo ${Run_Date} | cut -c9-10`
+#
+cp ${Eta_ucl}/solar                                  \
+   ${Eta_run}/solar
+#
+# Check if isn´t first run
+if [ -s ${Eta_fix_conf}/deta ] ;then
+   cp ${Eta_fix_conf}/deta                           \
+      ${Eta_run}/deta
+#
+   cp ${Eta_fix_conf}/VGREEN_12MO.dat                \
+      ${Eta_run}/VGREEN_12MO.dat
+#
+   cp ${Eta_fix_conf}/co2.${LM}_${PT}mb_${co2ppm}ppm \
+      ${Eta_run}/CO2.dat
+################################################################################
+   cp ${Eta_fix_conf}/co2_SGTMP_L${LM}_${co2TransCoef}_AllGHGs.bin  \
+      ${Eta_run}/co2_SGTMP_cluster.bin
+#
+   cp ${Eta_fix_conf}/co2_DATA_L${LM}_${co2TransCoef}_AllGHGs.bin   \
+      ${Eta_run}/co2_DATA_cluster.bin
+#
+   cp ${Eta_fix_conf}/co2_CO21D_L${LM}_${co2TransCoef}_AllGHGs.bin  \
+      ${Eta_run}/co2_CO21D_cluster.bin
+#
+   cp ${Eta_fix_conf}/co2_CO21D3_L${LM}_${co2TransCoef}_AllGHGs.bin \
+      ${Eta_run}/co2_CO21D3_cluster.bin
+#
+   cp ${Eta_fix_conf}/co2_CO21D7_L${LM}_${co2TransCoef}_AllGHGs.bin \
+      ${Eta_run}/co2_CO21D7_cluster.bin
+################################################################################
+fi
+
+if [ "${postout}" = "latlonnopack" ] ; then
+
+if [ -s  ${Eta_ucl}/wgts1 ] ; then
+cp ${Eta_ucl}/wgts1 ${Eta_run}/wgts1
+fi
+
+ln -sf  ${Eta_ucl}/cntrl.parm_NOPACK  ${Eta_run}/cntrl.parm_NOPACK
+cp ${Eta_grb}/cptec.table        ${Eta_run}/
+else
+cp ${Eta_ucl}/cntrl.parm_GRIBIT  ${Eta_run}/cntrl.parm_GRIBIT
+fi
+
+
+
+err=$?
+if [ ${err} -ne 0 ] ; then
+  echo "ERRO NO PREPROC!!"
+  echo "Finalizando a rodada...."
+  exit 1
+fi
+
+
+if [ "${TypRun}" = "forecast" ] ; then
+fct=0	
+fctF=`printf "%06d" "${fct}"`
+i=1
+arq[${i}]=${CInit}_${Run_Date1}.${fctF}${extprep}
+echo "  INIT_IN(${i})='${data_prep}/${arq[${i}]}'">${Eta_run}/ICCC
+let i=2
+if ((${TInitBC}==0)) ; then
+ Run_Date1=`${Eta_util}/caldate.3.0 ${Run_Date} - ${HInitBC}hr 'yyyymmddhh'`
+ let fct=${fct}+${InitBC}+${HInitBC}
+ fctF=`printf "%06d" "${fct}"`
+else
+ let fct=${fct}+${InitBC} 
+ fctF=`printf "%06d" "${fct}"`
+fi
+while ((${i}<=${ninit})) ; do
+  arq[${i}]=${BCond}_${Run_Date1}.${fctF}${extprep}
+  echo "  INIT_IN(${i})='${data_prep}/${arq[${i}]}'">>${Eta_run}/ICCC
+  let i=${i}+1
+  let fct=${fct}+${InitBC}
+  fctF=`printf "%06d" "${fct}"`
+done
+
+else #simulation
+fctF=`printf "%06d" "0"`
+i=1
+arq[${i}]=${CInit}_${Run_Date1}.${fctF}${extprep}
+echo "  INIT_IN(${i})='${data_prep}/${arq[${i}]}'">${Eta_run}/ICCC
+let i=2
+while ((${i}<=${ninit})) ; do
+  Run_Date1=`${Eta_util}/caldate.3.0 ${Run_Date1} + ${InitBC}hr 'yyyymmddhh'`
+  arq[${i}]=${BCond}_${Run_Date1}.${fctF}${extprep}
+  echo "  INIT_IN(${i})='${data_prep}/${arq[${i}]}'">>${Eta_run}/ICCC
+let i=${i}+1
+done
+fi
+
+fcthr=0
+fcthrF=`printf "%06d" "${fcthr}"`
+nfctout=0
+echo "TSHDE="|awk '{printf ("%s",$1)}'>${Eta_run}/FCTHR
+while ((${fcthr}<=${Fct})) ; do
+echo ${fcthrF} |awk '{printf ("%s,",$1)}'>>${Eta_run}/FCTHR
+let rest=${fcthr}%10
+if (((10#${fcthrF}!=000000)  && (${rest}==0))) ; then
+echo ${fcthrF} |awk '{printf ("\n"," ")}'>>${Eta_run}/FCTHR
+fi
+let fcthr=${fcthr}+${IntFct}
+fcthrF=`printf "%06d" "${fcthr}"`
+let nfctout=${nfctout}+1
+done
+echo ${fcthrF} |awk '{printf ("\n"," ")}'>>${Eta_run}/FCTHR
+
+cat << EOF > ${Eta_run}/ETAIN_FCT.nml
+ &ETAINFCTNML
+  CUCNVCFLG=${cucnvcflg}
+  CUCNVCSQM=${cucnvcsqm}
+  FREQOUT2RESTRT=${freqout2restrt}
+  LCO2=${co2flg}
+  LDDAMPFLG=${lddampflg}
+  LFCTTIMCHK=${lfcttimchk}
+  LSST=${sstflg}
+  LSSTMNTHLY=${sstmnthly}
+  MICROPHYSSQM=${microphyssqm}
+  NSOTYP=${qtdtypsolo}
+  SHLCNVFLG=${shlcnvcflg}
+  SHLCNVSQM=${shlcnvcsqm}
+  SLOPE=${slope}
+  RHGRDL=${rhgrdl}
+  RHGRDS=${rhgrds}
+  WRITEOUT2RESTRT=${writeout2restrt}
+  VSNOWADST=${vsowadst}
+ &END
+EOF
+
+cat << EOF > ${Eta_run}/ETAIN
+ &MODEL_GRIDS
+  IM=${IM}
+  JM=${JM}
+  DLMD=${dlmd}
+  DPHD=${dphd}
+  TLM0D=${Lon}
+  TPH0D=${Lat}
+ &END
+EOF
+
+cat << EOF > ${Eta_run}/NAMELIST_PARMCONF
+ &PARMCONF
+  IM=${IM}
+  JM=${JM}
+  DLMD=${dlmd}
+  DPHD=${dphd}
+  TLM0D=${Lon}
+  TPH0D=${Lat}
+ &END
+EOF
+
+cat << EOF4 > ${Eta_run}/SOILMOIST
+ &DANMOIST
+  moistdan=${soilmoist}
+ &END
+EOF4
+
+cat << EOF4 > ${Eta_run}/NEWGLOBALSOIL
+ &GLOBALSOIL
+  soilglobal=${newglobalsoil}
+ &END
+EOF4
+
+cat << EOF5 > ${Eta_run}/MOISTPROP
+ &DANPROP
+  prop1=${prop1}
+  prop2=${prop2}
+  prop3=${prop3}
+  prop4=${prop4}
+ &END
+EOF5
+
+cat << EOF6 > ${Eta_run}/TYPSOLO
+${qtdtypsolo}
+EOF6
+
+cat << EOF7 > ${Eta_run}/COAC.nml
+ &COAC_nml
+  coac=${coac}
+  lcoac=${lcoac}
+ &END
+EOF7
+
+if [ "${topo}" = "1km" ] ; then
+export data_topo=${Eta_static}/topo
+SEARES=30.
+elif [ "${topo}" = "90m" ] ; then
+export data_topo=${Eta_static}/topo90m
+SEARES=3.0
+fi
+
+let PTINP=${PT}*100
+cat << EOF > ${Eta_run}/ETAIN
+ &MODEL_GRIDS
+  TLM0D=${Lon}
+  TPH0D=${Lat}
+  IM=${IM}
+  JM=${JM}
+  LM=${LM}
+  PTINP=${PTINP}.
+  DLMD=${dlmd}
+  DPHD=${dphd}
+  DT=${dt}
+  IDTAD=2
+  IMONTH=${imonth}
+  IDATE=${iday}
+  IYEAR=${iyear}
+  ISTRTIM=${ih}
+  NSOIL=8
+  NINIT=${ninit}
+  TBOCO=${InitBC}
+EOF
+cat ${Eta_run}/ICCC >> ${Eta_run}/ETAIN 
+cat << EOF1 >> ${Eta_run}/ETAIN
+  INIT_GDSDIR='${data_prep}/gdsinfo${extprep}'
+  INIT_OUT='${Eta_run}'
+ &END
+
+ &SFC_INIT
+  TOPO_IN='${data_topo}/'
+  TOPO_OUT='${Eta_fix_conf}/etatopo.dat'
+  SEARES=$SEARES
+  FRACLK=0.3
+  GRIBSOIL=.TRUE.
+  SIGMA=.FALSE.
+  REAN=.FALSE.
+  REAN_SFC='${data_grib}/grb2d93031200'
+ &END
+EOF1
+
+DIR_SMASKS_3S=${Eta_fix}/smasks_3s
+
+cat << EOF1 > ${Eta_run}/seamaskdata.dat
+ &lsmkdata
+  froot='${DIR_SMASKS_3S}', !diretorio de busca das mascaras de oceano-terra (3s) no formato .bin
+  res=1200.d0
+ &end
+EOF1
+
+cat << EOF2 > ${Eta_run}/VEGETATION
+ &VEG
+  vegflag=${vegflag}
+ &END
+EOF2
+
+
+cat << EOF > ${Eta_run}/FCSTDATA.meso
+ &FCSTDATA                                                           
+ TSTART=00.0,TEND=${Fct}.00,TCP=${Fctp1},RESTRT=.FALSE.,SINGLRST=.TRUE.,SUBPOST=.FALSE.,
+ NMAP=${nfctout},
+EOF
+
+cat ${Eta_run}/FCTHR >> ${Eta_run}/FCSTDATA.meso
+
+cat ${Eta_ucl}/PressLevel >> ${Eta_run}/FCSTDATA.meso
+
+cat << EOF >> ${Eta_run}/FCSTDATA.meso
+ NPHS=${nphs},NCNVC=${ncnv},NRADSH=1,NRADLH=1,NTDDMP=1,                       
+ TPREC=${IntPhisAcum},THEAT=${IntPhisAcum},TCLOD=${IntPhisAcum},
+ TRDSW=${IntPhisAcum},TRDLW=${IntPhisAcum},TSRFC=${IntPhisAcum},
+ NEST=.FALSE.,HYDRO=${hydro},SPLINE=.TRUE.
+ &END
+ &POSTLIST
+  CHMO='chmod 755 ${Eta_run}/#'
+  SUBMIT='qsub ${Eta_run}/#'
+ &END                                                             
+EOF
+
+# snowdepth 
+cp ${Eta_fix}/snowdepth.grb ${Eta_run}/snowdepth.grb
+cp ${Eta_fix}/imssnow.grb ${Eta_run}/imssnow.grb
+#
+else    #if restrt
+fcthr=${Fcst2restrt}
+fcthrF=`printf "%06d" "${fcthr}"`
+nfctout=0
+echo "TSHDE="|awk '{printf ("%s",$1)}'>${Eta_run}/FCTHR
+while ((${fcthr}<=${Fct})) ; do
+echo ${fcthrF} |awk '{printf ("%s,",$1)}'>>${Eta_run}/FCTHR
+let rest=${fcthr}%10
+if (((10#${fcthrF}!=000000)  && (${rest}==0))) ; then
+echo ${fcthrF} |awk '{printf ("\n"," ")}'>>${Eta_run}/FCTHR
+fi
+
+let fcthr=${fcthr}+${IntFct}
+fcthrF=`printf "%06d" "${fcthr}"`
+let nfctout=${nfctout}+1
+done
+echo ${fcthrF} |awk '{printf ("\n"," ")}'>>${Eta_run}/FCTHR
+cat << EOF > ${Eta_run}/FCSTDATA.meso
+ &FCSTDATA
+ TSTART=${Fcst2restrt}.0,TEND=${Fct}.00,TCP=${Fctp1},RESTRT=.TRUE.,SINGLRST=.TRUE.,SUBPOST=.FALSE.,
+ NMAP=${nfctout},
+EOF
+
+cat ${Eta_run}/FCTHR >> ${Eta_run}/FCSTDATA.meso
+
+cat ${Eta_ucl}/PressLevel >> ${Eta_run}/FCSTDATA.meso
+
+cat << EOF >> ${Eta_run}/FCSTDATA.meso
+ NPHS=${nphs},NCNVC=${ncnv},NRADSH=1,NRADLH=1,NTDDMP=1,
+ TPREC=${IntPhisAcum},THEAT=${IntPhisAcum},TCLOD=${IntPhisAcum},
+ TRDSW=${IntPhisAcum},TRDLW=${IntPhisAcum},TSRFC=${IntPhisAcum},
+ NEST=.FALSE.,HYDRO=${hydro},SPLINE=.TRUE.
+ &END
+ &POSTLIST
+  CHMO='chmod 755 ${Eta_run}/#'
+  SUBMIT='qsub ${Eta_run}/#'
+ &END
+EOF
+
+fi
+Fcst2restrt=`printf "%06d" "${Fcst2restrt}"` 
+cat << EOF > ${Eta_run}/EtaPreproc.nqs
+#!/bin/bash
+# PbsSlurm
+cd ${Eta_run}
+if [ ${restrt} == COLD ] && [ ${run_preproc} == yes ] ; then
+  ${Eta_run}/new_prep.sh
+  export err=$?
+  if [ ${err} -ne 0 ] ; then
+    echo "ERRO NO PREPROC!!"
+    echo "Finalizando a rodada...."
+    exit 1
+  fi
+elif [ ${restrt} == COLD ] && [ ${run_preproc} == no ] ; then
+  cp   ${Eta_preproc_cp}/*.file ${Eta_run}/.
+  cp   ${Eta_preproc_cp}/ZEFF ${Eta_run}/.
+  cp   ${Eta_preproc_cp}/sst2_EGRD_${Run_Date}.bin ${Eta_run}/.
+  cp   ${Eta_preproc_cp}/NSSTFLDS.txt ${Eta_run}/.
+  cp   ${Eta_preproc_cp}/TEMPO_INIT_SST.txt ${Eta_run}/.
+elif [ -s ${Eta_run}/OUT2RESTRT/OUT2RESTRT_0000.${Fcst2restrt} ];then 
+  echo "Warm start!"
+else
+  echo "File required for restart not found!"
+  echo "Check:"
+  echo "Directory: ${Eta_run}/OUT2RESTRT"
+  echo "Variable writeout2restrt in ConfigRun_${Cnfg} must be .true. in previus run"
+  exit 1
+fi
+
+# Submit Pos
+${QSB} ${Eta_run}/SPos${Run_Date}.sh > ${Eta_run}/SPos.out 2>&1 &
+#Submit Model
+${QSB} ${Eta_run}/EtaFcst.sh |tee ${Eta_run}/EtaFcst.out
+
+exit 0
+EOF
+
+chmod 755 ${Eta_run}/EtaPreproc.nqs
+${QSB} ${Eta_run}/EtaPreproc.nqs

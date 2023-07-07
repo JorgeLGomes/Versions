@@ -1,0 +1,8 @@
+#!/bin/bash  
+# PbsSlurm                                                                        
+# VARIAVEIS
+
+export Hfct=HFCT
+
+cd ${Eta_run}
+${Eta_run}/outjob_special ${Hfct} ${Hfct} ${IntFct} ${postout}

@@ -1,0 +1,14 @@
+#!/bin/bash -x
+rm -f ./Run_process.sh
+rm -f ./process.sh
+rm -f ./convert_sst_besm2bin.ksh
+Dir_root=`pwd`
+cat template/Run_process.sh | sed -e "s:DIRROOT:"${Dir_root}":g" > ./Run_process.sh 
+cat template/process.sh | sed -e "s:DIRROOT:"${Dir_root}":g" > ./process.sh   
+cat template/convert_sst_besm2bin.ksh | sed -e "s:DIRROOT:"${Dir_root}":g" > ./convert_sst_besm2bin.ksh   
+cat template/convert_sst_besm2monthlybin.ksh | sed -e "s:DIRROOT:"${Dir_root}":g" > ./convert_sst_besm2monthlybin.ksh
+chmod 755 ./Run_process.sh
+chmod 755 ./process.sh  
+chmod 755 ./convert_sst_besm2bin.ksh
+chmod 755 ./convert_sst_besm2monthlybin.ksh
+./wget_besm_sst_grid0.25.nc.sh

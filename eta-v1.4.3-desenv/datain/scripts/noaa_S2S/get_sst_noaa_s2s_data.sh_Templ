@@ -1,0 +1,19 @@
+#!/bin/ksh -x
+#
+
+# VARIAVEIS
+#
+export Dir_SST=${datain}"/noaa/s2s"
+
+ArqSSTIn=sst_${Run_Date}.bin
+
+rm -f  ${Eta_run}/${ArqSSTIn}
+echo "Copy "${Dir_SST}/${ArqSSTIn}'  FILE'
+
+if [ -s ${Dir_SST}/${ArqSSTIn} ] ; then
+    cp ${Dir_SST}/${ArqSSTIn} ${Eta_run}/${ArqSSTIn}
+    exit 0
+else 
+    echo ${ArqSSTIn}"  FILE NOT FOUND."
+    exit 1
+fi

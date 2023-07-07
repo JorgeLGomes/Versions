@@ -1,0 +1,4 @@
+FC = mpif90 -dW -Wf" -pvctl  noassume vwork=stack "
+CC = cc 
+FFLAGS = 
+CFLAGS = 

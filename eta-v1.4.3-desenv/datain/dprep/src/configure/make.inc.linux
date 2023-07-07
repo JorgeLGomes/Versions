@@ -1,0 +1,6 @@
+
+FC         = pgf90
+FFLAGS     = -fast
+CFLAGS     = 
+CDF_INC    =     
+CDF_LIB    =     

@@ -1,0 +1,15 @@
+ &SSTGRD_IN
+  INCR_LAT= 1.000            ,
+  INCR_LON= 1.000            ,
+  NX= 360                    ,
+  NY= 181                    ,
+  LAT_1 = -90.0000          ,
+  LON_1 = 0.0000            ,
+  LAT_NY = 90.0000           ,
+  LON_NX = 359.0000          ,
+  SMOOT= .false.             ,
+  NSMOOT= 4                  ,
+  FILE_ACCESS="SEQUENTIAL"   ,
+  YREV= .true.               ,
+  UNDEF = 9.999e+20
+ &END

@@ -1,0 +1,149 @@
+#!/bin/bash -f
+# VARIAVEIS
+cd ${Eta_run}
+export F_SETBUF=16384
+
+mmddhh=`echo ${Run_Date} |cut -c 5-10`
+
+#rm EGRD* latlon_* lmbc_*
+###################################################################
+#
+#  head is used to define symbolic links.  On HP's it should be "ftn"
+#  Believe most other machines (SGI's and Suns, at least) use "fort."
+#
+head="fort."
+#
+#######################
+
+if (($#<3)); then
+echo "need three arguments "
+echo "first is starting time"
+echo "second is ending fore hr"
+echo "third is interval"
+exit
+fi
+
+if (($#==3)); then
+echo "if include type (latlon or lmbc) as argument 4"
+echo "and a gempak file name as argument 5"
+echo "the file will automatically be degribbed using GEMPAKs"
+echo "nagrib program"
+echo " "
+echo " "
+echo "if you dont use GEMPAK, ignore this"
+echo " "
+fi
+
+#--------------------------------------------------------------                 
+out_dir=`pwd`
+export COMSP=${out_dir}/
+echo $COMSP
+export fcsthr=${1}
+export fcsthrF=`printf "%06d" "${fcsthr}"`
+			      
+tend=$2
+numtimes=$2
+let numtimes=${tend}-${fcsthr}
+let numtimes=$numtimes/$3
+let numtimes=$numtimes+1
+invar="${fcsthrF} ${numtimes} ${3}"
+
+echo starting at forecast time $1 and doing $numtimes at $3 hour intervals
+sleep 2
+if [ ${postout} = latlon ]; then
+ echo $invar "GRIBIT" > namelist_${fcsthrF}
+else
+ echo $invar "NOPACK" ${IntFct3D} ${Split2D3D}  > namelist_${fcsthrF}
+fi
+
+#------------------
+#
+# QUILT JOB
+#
+#------------------
+
+
+if  [[ -s RESTRT${fcsthrF}.quilt.${tmmark} ]] ; then
+echo "quilting up"
+ln -s -f CNST.file ${head}12
+ExecCmd1P ${Eta_exe}/quilt.x < namelist_${fcsthrF} > quilt.log
+#
+# rm restrt*quilt.${tmmark}
+fi
+
+#------------------------
+#
+# POST JOB
+#
+#------------------------
+
+echo start post
+cat namelist_${fcsthrF}
+
+cd ${Eta_run}
+export MPIPROGINF=ALL_DETAIL
+export MPICOMMINF=ALL
+export MPIMULTITASKMIX=OFF
+export SERVER_GROUPS=1
+export tmmark=t00s		  
+export COMSP=${out_dir}/
+echo $COMSP
+
+rm -f ${head}81 ${head}82
+ln -s -f omg                             ${head}81         
+ln -s -f all                             ${head}82
+ExecCmdNPP ${Eta_exe}/${EtaPostexec//[[:space:]]} \
+       < ${Eta_run}/namelist_${fcsthrF} > ${Eta_run}/post${fcsthrF}.log
+
+#SUBMIT PROFILE
+FctF=`printf "%06d" "${Fct}"`
+if [ ${fcsthrF} == ${FctF} ] ; then
+cat <<EOF> ${Eta_run}/submitprofile
+#!/bin/bash
+# PbsSlurm
+cd ${Eta_run}
+${Eta_run}/outjob_special_prof
+EOF
+
+chmod 755 ${Eta_run}/submitprofile
+${QSB} ${Eta_run}/submitprofile
+fi
+#END SUBMIT PROFILE
+
+
+# Test if the LATLON was created
+ARQ_LATLON="False"
+while [ "${ARQ_LATLON}" != "True" ] ; do
+
+
+if [ -s ${Eta_run}/LATLONDONE${fcsthrF}.t00s ] ; then
+
+#### Now extract a more friendly output grid 
+
+# cp ../../copygb/copygb.x .
+
+     gridlat=`cat outjob_input_lat`
+     echo $gridlat
+
+     input=EGRD3D${fcsthrF}.t00s
+     outputlmb=lmbc_${fcsthrF}
+     outputlat=latlon_${fcsthrF}
+ 
+     if [ ${postout} = latlonnopack ]; then
+      ExecCmd1P ${Eta_exe}/${Reformexec//[[:space:]]} \
+	     < namelist_${fcsthrF} > postout_${fcsthrF}
+      ${Eta_run}/Finaliza.sh  ${fcsthr} ${Fct} ${IntFct} ${IntFct3D}
+###   Incluir teste se os arquivos .bin e .ctl foram criados corretamente
+###   e retornar codigo de erro que será utilizado para definir o status 
+###   da variável ARQ_LATLON      
+      ARQ_LATLON="True"
+     fi
+
+ else
+   sleep 20
+ fi 
+done
+
+#rm -f  ${Eta_run}/LATLON${fcsthrF}.t00s
+
+exit                                                                            

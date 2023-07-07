@@ -1,0 +1,8 @@
+#! /bin/sh -x
+rm -f *.lst *.i
+rm -f ../../../lib/libinitbc.a
+make -f Makefile.tmp
+touch TABLE.f
+touch TABLEQ.f
+make -f Makefile.tmp2
+

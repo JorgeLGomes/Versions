@@ -1,0 +1,39 @@
+
+# .SILENT:
+
+include ../../configure/make.inc
+#echo $(LIBDIR) is the lib directory
+
+INC = ../../include
+
+LINK.f = $(FC) $(FFLAGS) -I$(INC)
+
+# Define main programs.
+
+MAIN_TOPO = etatopo_3s.F #isr
+MAIN_CORNERS = corners.f90
+
+# Define other libraries needed to link.
+
+#OTHER_LIB = $(LIBDIR)/libetautil.a 
+OTHER_LIB = ../../../lib/libetautil.a 
+
+# Define executables.
+
+#EXE_TOPO = $(EXEDIR)/etatopo.exe
+#EXE_TOPO = ../../../exe/etatopo.exe #isr
+#EXE_CORNERS = ../../../exe/corners.exe #isr
+EXE_TOPO = /scratch1/grupos/eta/home/hieta/worketa/eta/101X159X50_120p_modificado/exe/etatopo_3s.exe
+
+
+EXE = $(EXE_TOPO)
+EXE2 = $(EXE_CORNERS)
+# Default target.
+
+exe: $(EXE)
+exe: $(EXE2)
+
+$(EXE_TOPO): $(MAIN_TOPO) $(OTHER_LIB)
+	$(LINK.f) $(MAIN_TOPO) $(OTHER_LIB) -o $@
+$(EXE_CORNERS): $(MAIN_CORNERS)
+	$(FC) $(MAIN_CORNERS) -o $@

@@ -1,0 +1,45 @@
+#!/bin/ksh 
+#
+#
+# VARIAVEIS
+
+cd ${Eta_run}
+wgribpth=`which wgrib`
+if [ ${wgribpth} = " " ] ; then
+echo "wgrib not found!"
+exit
+fi
+sb=`${wgribpth} -V ${Eta_run}/latlon_000|head -10|grep lat|awk '{print $3}'`
+wb=`${wgribpth} -V ${Eta_run}/latlon_000|head -10|grep long|awk '{print $2}'`
+dx=`${wgribpth} -V ${Eta_run}/latlon_000|head -10|grep long|awk '{print $6}'`
+nx=`${wgribpth} -V ${Eta_run}/latlon_000|head -10|grep timerange|awk '{print $10}'`
+dy=`${wgribpth} -V ${Eta_run}/latlon_000|head -10|grep lat|awk '{print $7}'`
+ny=`${wgribpth} -V ${Eta_run}/latlon_000|head -10|grep timerange|awk '{print $12}'`
+Dir_date=`${Eta_util}/caldate.3.0 ${Run_Date} + 0hr 'yyyy/mmm/dd'`
+DIR_OUT=${Eta_grbctl}/${Run_Date}
+mkdir -p ${DIR_OUT}
+NARQ=${LabRod}${Res}.${Run_Date}.pgrbf
+typeset -Z3 i
+i=0
+mv ${Eta_run}/latlon_${i} ${DIR_OUT}/${NARQ}${i}
+let i=${i}+${IntFct}
+while ((${i}<=${Fct})) ; do
+mv ${Eta_run}/latlon_${i} ${DIR_OUT}/${NARQ}${i}
+let i=${i}+${IntFct}
+done
+let NTIME=${Fct}/${IntFct}
+let NTIME=${NTIME}+1
+TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + 0dy 'HHZDDMMMYYYY'`
+cat ${Eta_ucl}/CTLTEMP |sed "s/NARQ/${NARQ}/g"  \
+|sed "s/NNY/${ny}/g" |sed "s/SB/${sb}/g" |sed "s/DDY/${dy}/g" \
+|sed "s/NNX/${nx}/g" |sed "s/WB/${wb}/g" |sed "s/DDX/${dx}/g" \
+|sed "s/NTIME/${NTIME}/g" \
+|sed "s/ICN/${TIMEOUT}/g"|sed "s/INTHR/${IntFct}hr/g" > ${DIR_OUT}/${NARQ}.ctl
+
+gribmappth=`which gribmap`
+if [ "${gribmappth}" = " " ] ; then
+echo "wgrib not found!"
+exit
+fi
+
+${gribmappth} -i ${DIR_OUT}/${NARQ}.ctl

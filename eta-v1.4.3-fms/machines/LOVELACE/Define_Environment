@@ -1,0 +1,20 @@
+QSB="/opt/pbs/bin/qsub"
+#
+ExecCmd1P="mpirun -np 1"
+ExecCmdNPP="mpirun -np NCPUS"
+ExecCmdNPF="mpirun -np \${npr} --oversubscribe"
+# 
+export QUE1="serial"
+#
+# etafcst
+export QUE2="par128"
+export NCpusNode=128
+#
+# etapost
+export QUE3="serial"
+export NNodesPos=1
+export NCpusNodePos=1
+#
+export cdoPath="/lustre_xc50/manoel_baptista/modules/software/cdo-1.9.6/bin"
+export gradsPath="/lustre_xc50/jorge_gomes/Eta_support_data/util/grads/2.1.a1/bin"
+export DIRSUPPORT=/lustre_xc50/jorge_gomes/Eta_support_data

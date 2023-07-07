@@ -1,0 +1,27 @@
+FC= mpif90 -ccl pgf90
+CC= /lib/cpp -traditional-cpp
+#CC= pgcpp
+FFLAGS= -fast -DLITTLE
+#FFLAGS= -mcmodel=medium -Mlarge_arrays -DLITTLE
+CFLAGS=
+#CFLAGS= -mcmodel=medium -Mlarge_arrays
+CPP= pgcc
+#CPP= pgcc -mcmodel=medium -Mlarge_arrays
+# ----------------------------------
+
+# Intel version --------------------
+#FC= mpif90 -ccl ifort
+#CC= /lib/cpp -traditional-cpp
+#FFLAGS= -O3 -assume byterecl -DLITTLE -132 -align all -fp-model strict -ftz -WB -zero
+#CFLAGS=
+#CPP= icc
+# ----------------------------------
+
+
+# PathScale version ----------------
+#FC= mpif90 -ccl pathf90
+#CC= /lib/cpp -traditional-cpp
+#FFLAGS= -ffortran-bounds-check -fullwarn -m64 -msse2 -O2 
+#CFLAGS=
+#CPP= pathcc
+# ----------------------------------

@@ -1,0 +1,35 @@
+CFS
+360 181 26     !nx,ny,nz
+0              !Projection Type LL=0
+-9000000       !Latitude mais ao Sul
+0000000        !Longitude mais a Oeste
+9000000        !Latitude mais ao Norte
+35900000       !Longitude mais a Leste 
+10000          !x Resolution ^10-4
+10000          !y Resolution ^10-4
+1000.          !Levels  1-nz
+ 975.
+ 950.
+ 925.
+ 900.
+ 850.
+ 800.
+ 750.
+ 700.
+ 650.
+ 600.
+ 550.
+ 500.
+ 450.
+ 400.
+ 350.
+ 300.
+ 250.
+ 200.
+ 150.
+ 100.
+  70.
+  50.
+  30.
+  20.
+  10.

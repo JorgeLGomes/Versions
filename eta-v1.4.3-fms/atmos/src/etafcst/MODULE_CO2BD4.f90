@@ -1,0 +1,31 @@
+    MODULE CO2BD4
+!>--------------------------------------------------------------------------------------------------
+!> MODULE CO2BD4
+!>
+!> ABSTRACT:
+!> MODULE CO2BD4 CONTAINS CO2 TRANSMISSION FUNCTIONS AND TEMPERATURE AND PRESSURE DERIVATIVES FOR 
+!> THE 670-800 CM-1 PART OF THE 15 UM CO2 BAND. THESE DATA ARE IN BLOCK DATA BD4.
+!>
+!> CO271 - TRANSMISSION FCTNS. FOR T0 (STD. PROFILE) WITH P(SFC)=1013.25 MB
+!> CO278 - TRANSMISSION FCTNS. FOR T0 (STD. PROFILE) WITH P(SFC)= ^810 MB
+!> CDT71 - FIRST  TEMPERATURE DERIVATIVE OF CO271
+!> CDT78 - FIRST  TEMPERATURE DERIVATIVE OF CO278
+!> C2D71 - SECOND TEMPERATURE DERIVATIVE OF CO271
+!> C2D78 - SECOND TEMPERATURE DERIVATIVE OF CO271
+!>
+!> USE MODULES: F77KINDS
+!>              RDPARM
+!>
+!> DRIVER     : CO2DTA
+!>--------------------------------------------------------------------------------------------------
+    USE F77KINDS
+    USE RDPARM  , ONLY : LP1
+!
+    IMPLICIT NONE
+!
+    SAVE
+! 
+    REAL   (KIND=R4KIND), DIMENSION(LP1)                                                        ::&
+    & CO271   , CO278   , CDT71   , CDT78   , C2D71   , C2D78
+! 
+    END MODULE CO2BD4

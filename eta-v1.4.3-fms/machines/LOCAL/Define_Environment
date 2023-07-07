@@ -1,0 +1,20 @@
+QSB=""
+#
+ExecCmd1P="mpirun -np 1"
+ExecCmdNPP="mpirun -np NCPUS"
+ExecCmdNPF="mpirun -np \${npr} --oversubscribe"
+# 
+export QUE1=""
+#
+# etafcst
+export QUE2=""
+export NCpusNode=4
+#
+# etapost
+export QUE3=""
+export NNodesPos=1
+export NCpusNodePos=1
+#
+export cdoPath="/usr/bin"
+export gradsPath="/home/jorge/Eta_support_data/util/grads/2.0.a9/bin"
+export DIRSUPPORT="/home/jorge/Eta_support_data"

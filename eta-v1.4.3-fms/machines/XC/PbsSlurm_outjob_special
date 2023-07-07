@@ -1,0 +1,7 @@
+#PBS -N prof${Run_Date}
+#PBS -lselect=1:ncpus=1
+#PBS -A CPTEC
+#PBS -o ${Eta_run}/prof${Run_Date}
+#PBS -j oe
+#PBS -q ${QSB}
+

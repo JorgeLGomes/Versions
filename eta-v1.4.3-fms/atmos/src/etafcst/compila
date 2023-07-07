@@ -1,0 +1,5 @@
+#!/bin/bash -x
+make clean
+make
+touch DIVHOASTQL.f90 PGCOR.f90 SFLX.f90
+make -f makefile_O0

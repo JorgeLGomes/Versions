@@ -1,0 +1,20 @@
+    MODULE PARMCONF
+!>--------------------------------------------------------------------------------------------------
+!> MODULE PARMCONF
+!>
+!> USE MODULES: F77KINDS
+!>--------------------------------------------------------------------------------------------------
+    USE F77KINDS
+!------------------------------------------------------- 
+! SET PRIMARY GRID DIMENSIONS AND PRESSURE OUTPUT LEVELS
+!------------------------------------------------------- 
+    INTEGER(KIND=I4KIND), PARAMETER :: IM    = imin
+    INTEGER(KIND=I4KIND), PARAMETER :: JM    = jmin
+    REAL   (KIND=R4KIND), PARAMETER :: DLMD  = dlmdin
+    REAL   (KIND=R4KIND), PARAMETER :: DPHD  = dphdin
+    REAL   (KIND=R4KIND), PARAMETER :: TLM0D = tlm0din
+    REAL   (KIND=R4KIND), PARAMETER :: TPH0D = tph0din
+!
+    END MODULE PARMCONF
+
+

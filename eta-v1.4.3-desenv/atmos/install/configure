@@ -1,0 +1,30 @@
+#!/bin/sh 
+
+confin=$1
+Machine=$2
+rm -f ${DIREta}/exe/*
+rm -f ${DIREta}/lib/*.a
+
+rm -f ${DIREtaSRC}/prep/initbc/*.o ${DIREtaSRC}/prep/initbc/*.i ${DIREtaSRC}/prep/initbc/*.lst
+rm -f ${DIREtaSRC}/prep/sst/*.o rm -f ${DIREtaSRC}/prep/sst/*.i rm -f ${DIREtaSRC}/prep/sst/*.lst 
+rm -f ${DIREtaSRC}/prep/util/*.i ${DIREtaSRC}/prep/util/*.lst
+rm -f ${DIREtaSRC}/prep/vgreen/*.o rm -f ${DIREtaSRC}/prep/vgreen/*.i rm -f ${DIREtaSRC}/prep/vgreen/*.mod rm -f ${DIREtaSRC}/prep/vgreen/*.lst
+
+rm -f ${DIREtaSRC}/model_with_kf/*.o
+rm -f ${DIREtaSRC}/etafcst/*.o ${DIREtaSRC}/etafcst/*.i ${DIREtaSRC}/etafcst/*.mod ${DIREtaSRC}/etafcst/*.lst ${DIREtaSRC}/etafcst/MODULE_PARMETA.f90
+rm -f ${DIREtaSRC}/etafcst_kf/*.o
+rm -f ${DIREtaSRC}/etafcst_kf_mx/*.o
+
+rm -f ${DIREtaSRC}/post/quilt/*.o
+rm -f ${DIREtaSRC}/post/post_new/*.o
+rm -f ${DIREtaSRC}/post/copygb/*.o
+rm -f ${DIREtaSRC}/post/post0/*.o
+rm -f ${DIREtaSRC}/post/sndp/*.o
+rm -f ${DIREtaSRC}/post/IndiceTempSeveras/*.o
+
+cd ${DIRINSTALL}
+
+cat Makefile.in | sed s:etaroot:${DIREta}: > Makefile
+${DIRINSTALL}/set_parmeta_$confin $confin ${Machine}
+
+exit 0

@@ -1,0 +1,25 @@
+#!/bin/bash -x
+
+FC=`head -1   ${Eta_home}/src/configure/make.inc|cut -d= -f2`
+
+cd ${Eta_home}/src/prep/sst
+make clean
+make
+mv ${Eta_home}/exe/sst.x ${Eta_home_conf}/exe/sst.x
+cd ${Eta_home}/src/prep/veg
+${FC} -o ${Eta_home_conf}/exe/vegmsk_500m_urban_rj_sp.x ${Eta_home}/src/prep/veg/vegmsk_500m_urban_rj_sp.f
+${FC} -o ${Eta_home_conf}/exe/vegmsk_Eta_Atlantico.x ${Eta_home}/src/prep/veg/vegmsk_Eta_Atlantico.f
+${FC} -o ${Eta_home_conf}/exe/vegmsk_Eta_Atlantico_16classes.x ${Eta_home}/src/prep/veg/vegmsk_Eta_Atlantico_16classes.f
+
+####PARA TOPOGRAFIA DE 1km
+${FC} -o ${Eta_home_conf}/exe/select.x ${Eta_home}/src/prep/smask/smask_select.f
+
+####PARA TOPOGRAFIA DE 90m
+${FC} -o ${Eta_home_conf}/exe/select_3s.x ${Eta_home}/src/prep/smask/smask_select_3s.f
+
+cd ${Eta_home}/src/prep/newsoil
+${FC} -o ${Eta_home_conf}/exe/newsoil.x ${Eta_home}/src/prep/newsoil/newsoil.f 
+${FC} -o ${Eta_home_conf}/exe/newglobalsoil.x ${Eta_home}/src/prep/newsoil/newglobalsoil.f
+${FC} -o ${Eta_home_conf}/exe/newsoilFAO.x ${Eta_home}/src/prep/newsoil/newsoilFAO.f
+cd ${DIRINSTALL}
+pwd

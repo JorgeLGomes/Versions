@@ -1,0 +1,89 @@
+#!/bin/ksh -x
+
+#Functions
+ReplaceLine()
+{
+#!/bin/ksh -x
+vi $1 << end
+/${2}/
+:C
+${3}
+:w!
+:q
+end
+}
+InsertLine_vi()
+{
+#!/bin/ksh -x
+vi $1 << end
+:$2
+:o
+:options template
+:w!
+:q
+end
+}
+
+Change_vi()
+{
+#!/bin/ksh -x
+vi $1 << end
+:%s/${2}/$3
+:w!
+:q
+end
+}
+
+# VARIAVEIS
+
+ARQIN=$1
+ARQOUT=`echo ${ARQIN}|awk '{print tolower($1)}'`
+TEMPL=`echo ${ARQOUT}|cut -d+ -f1` 
+fct=$2
+DIR_Y=`echo ${Run_Date}|cut -c 1-4`
+DIR_M=`${Eta_home}/util/caldate.3.0 ${Run_Date} + 0d 'mmm'`
+DIR_D=`echo ${Run_Date}|cut -c 7-8`
+TimeLats=`${Eta_home}/util/caldate.3.0 ${Run_Date} + 0d 'hhZddmmmyyyy'`
+WRKDIR=${Eta_grbctl}/${Run_Date}
+cd ${Eta_run}
+
+mkdir -p ${WRKDIR}
+
+
+#rm -f LL40Ganl*
+pwd    
+
+/stornext/home/meta/grads-2.0.a9.oga/lats4d.sh -i ${Eta_binctl}/${ARQIN}.ctl \
+-o ${WRKDIR}/${ARQOUT} \
+-ftype ctl -format grads_grib  -table ${Eta_run}/cptec.table
+
+#
+# fixing grib header
+#
+${Eta_run}/fixgrb ${WRKDIR}/${ARQOUT}.grb
+chmod 755 ${WRKDIR}/${ARQOUT}.*
+
+
+if ((${fct}==000000)) ; then
+  cp ${WRKDIR}/${ARQOUT}.ctl ${WRKDIR}/${TEMPL}.ctl
+cat > head${Run_Date}.ctl << EOF
+dset ^${TEMPL}+%y4%m2%d2%h2.grb
+options template little_endian
+EOF
+nlinhas=`wc -l ${WRKDIR}/${TEMPL}.ctl|awk '{print $1}'`
+echo "nlinhas= "${nlinhas}
+let nlinhas=${nlinhas}-2
+tail -${nlinhas} ${WRKDIR}/${TEMPL}.ctl >> head${Run_Date}.ctl
+mv -f ${WRKDIR}/head${Run_Date}.ctl ${WRKDIR}/${TEMPL}.ctl
+let NArqs=${Fct}/${IntFct}
+let NArqs=${NArqs}+1
+Change_vi ${WRKDIR}/${TEMPL}.ctl ${ARQOUT}.gmp ${TEMPL}.gmp
+Change_vi ${WRKDIR}/${TEMPL}.ctl 'tdef 1' 'tdef '${NArqs}
+Change_vi ${WRKDIR}/${TEMPL}.ctl '6hr' ${IntFct}'hr'
+chmod 755 ${WRKDIR}/${TEMPL}.ctl
+fi
+#
+/stornext/home/meta/grads-2.0.a9.oga/gribmap -i ${GRBDIR}/${TEMPL}.ctl
+
+
+

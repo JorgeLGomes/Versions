@@ -1,0 +1,103 @@
+
+.SUFFIXES :
+.SUFFIXES : .F .f .c .o .a
+.PRECIOUS : $(LIB)
+.SILENT:
+
+# Define system commands.
+
+RM      = /bin/rm -f
+ECHO    = /bin/echo
+ARCHIVE = ar rs
+
+# Define compiler flags from machine dependent make.inc.
+
+include ../../configure/make.inc.O0
+
+INC = ../../include
+
+COMPILE.f = $(FC) -c $(FFLAGS) -I$(INC)
+
+# Define main program.
+
+MAIN = initbc.f
+
+# Define all necessary source files.
+
+OBJ = \
+$(LIB)(boco.o)   $(LIB)(const.o)   \
+$(LIB)(TABLE.o)   $(LIB)(TABLEQ.o)   \
+$(LIB)(dutil.o)  $(LIB)(interp.o)   \
+$(LIB)(GRIBST.o) $(LIB)(GRIDST.o) $(LIB)(VFRAC.o)   \
+$(LIB)(SSTHIRES.o) $(LIB)(SST14K.o)  \
+$(LIB)(C2K.o) $(LIB)(ZTERPG.o)      \
+$(LIB)(PRINTAF.o) $(LIB)(PRINTETA.o)  \
+$(LIB)(SNOHIRES.o) $(LIB)(SNO16GET.o)  \
+$(LIB)(SNO8GET.o) $(LIB)(PRINTIMS.o)  \
+$(LIB)(PUTVEG.o) $(LIB)(PUTEM.o) \
+$(LIB)(GAULAT.o) $(LIB)(GAUTOETA.o) \
+$(LIB)(GAUTOICE.o) $(LIB)(BSSLZ1.o) \
+$(LIB)(READSFC.o) $(LIB)(coastal.o) $(LIB)(pusi.o) \
+$(LIB)(gausslat.o) $(LIB)(process_gaus.o) \
+$(LIB)(snowsoilsst.o) $(LIB)(gauss_ij_onetime.o)
+
+# Define library path and name.
+LIBDIR = /lustre_xc50/gustavo_sueiro/Oper/worketa/eta
+LIB = $(LIBDIR)/lib/libinitbc.a
+
+# Define other libraries needed to link.
+
+OTHER_LIB = $(LIBDIR)/lib/libetautil.a
+W3LIB = $(LIBDIR)/libraries/w3lib 
+
+# Define executable.
+
+EXE = ./initbc.exe
+
+.f.a:
+	$(ECHO)
+	$(ECHO) "Compiling $<"
+	$(COMPILE.f) $<
+	$(ECHO) "Adding $(<:.f=.o) to $@ archive."
+	$(ARCHIVE) $@ $(<:.f=.o)
+	$(RM) $(<:.f=.o)
+
+.f.o:
+	$(ECHO)
+	$(ECHO) "Compiling $<"
+	$(COMPILE.f) $<
+	$(ECHO) "Adding $(<:.f=.o) to $(LIB) archive."
+	$(ARCHIVE) $(LIB) $(<:.f=.o)
+	$(RM) $(<:.f=.o)
+
+# Default target.
+
+$(EXE): $(MAIN) $(LIB) $(OTHER_LIB) $(W3LIB)
+	$(FC) $(FFLAGS) -I$(INC) $(MAIN) $(LIB) $(OTHER_LIB) $(W3LIB) -o $(EXE)
+
+$(LIB): $(OBJ)
+	$(ECHO)
+	$(ECHO) "$(LIB) up-to-date"
+	$(ECHO)
+
+exe: $(EXE)
+
+lib: $(LIB)
+
+# Dependencies.
+
+$(LIB)(boco.o)    : $(INC)/ecommons.h
+$(LIB)(const.o)   : $(INC)/ecommons.h $(INC)/econstants.h
+$(LIB)(dutil.o)   : $(INC)/ecommons.h 
+$(LIB)(interp.o)  : $(INC)/ecommons.h $(INC)/econstants.h
+$(LIB)(SSTHIRES.o) : $(INC)/parmeta
+$(LIB)(SST14K.o)  : $(INC)/parmeta
+$(LIB)(ZTERPG.o)  : $(INC)/parmeta
+$(LIB)(SNOHIRES.o)  : $(INC)/parmeta
+$(LIB)(PRINTETA.o) : $(INC)/parmeta
+$(LIB)(PUTVEG.o) : $(INC)/parmeta
+$(LIB)(PUTEM.o) : $(INC)/parmeta
+$(LIB)(GAUTOETA.o) : $(INC)/parmeta
+$(LIB)(GAUTOICE.o) : $(INC)/parmeta
+$(LIB)(READSFC.o) : $(INC)/parmeta $(INC)/parmsoil
+$(LIB)(coastal.o) : $(INC)/parmeta $(INC)/parmsoil

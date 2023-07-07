@@ -1,0 +1,47 @@
+gposeta
+92 60 38     !nx,ny,nz
+0            !Tipo de projecao LL=0
+-6468800     !Latitude mais ao Sul
+-14625000    !Longitude mais a Oeste
+4593700      !Latitude mais ao Norte
+2437550      !Longitude mais a Leste Valor encontrado a partir de (360.000-0.9375)*10^5  
+18750        !Resolucao em x em graus *10^4  
+18750        !Resolucao em y em graus *10^4 
+1000.        !Niveis de 1-nz
+ 975.
+ 950.
+ 925.
+ 900.
+ 875.
+ 850.
+ 825.
+ 800.
+ 775.
+ 750.
+ 700.
+ 650.
+ 600.
+ 550.
+ 500.
+ 450.
+ 400.
+ 350.
+ 300.
+ 250.
+ 225.
+ 200.
+ 175.
+ 150.
+ 125.
+ 100.
+  70.
+  50.
+  30.
+  20.
+  10.
+   7.
+   5.
+   3.
+   2.
+   1.
+   0.4

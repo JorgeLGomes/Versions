@@ -1,0 +1,8 @@
+#!/bin/bash
+Eta_home_conf=CNFPATH 
+# PbsSlurm
+
+cd ${Eta_home_conf}/scripts
+
+ExecCmd1P ${Eta_home_conf}/exe/corners.exe > ${Eta_home_conf}/scripts/Corners.out
+${Eta_home_conf}/scripts/ajuste_pos.sh

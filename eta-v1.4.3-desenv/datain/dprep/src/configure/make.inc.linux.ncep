@@ -1,0 +1,6 @@
+
+FC         = /export-1/sgi100/data/mpyle/f90_wrk
+FFLAGS     = -O -s
+CFLAGS     = -O     
+CDF_INC    =     
+CDF_LIB    =     

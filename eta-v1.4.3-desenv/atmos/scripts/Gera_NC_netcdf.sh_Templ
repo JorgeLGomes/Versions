@@ -1,0 +1,852 @@
+#!/bin/bash
+
+##PROGRAMA PARA GERAR ARQUIVOS NETCDF DAS RODADAS DO ETA 
+## SE FOR RODADA LONGA GERA ARQUIVOS DIA POR DIA E JUNTA NO FINAL DE CADA MES 
+## SE FOR RODADA CURTA GERA DIA POR DIA E NO FINAL JUNTA TODA RODADA
+
+
+#VARIAVEIS
+
+
+######################## CONFIGURACAO ###############################
+_CDO=${cdoPath}/cdo
+_CALDATE=${Eta_util}/caldate.3.0
+_datai=${Run_Date}
+_tempo_rodada=${Fct}
+_dataf=$(${_CALDATE} ${_datai} + ${_tempo_rodada}h 'yyyymmddhh')
+_exp=${LabRod}
+_frequencia=${IntFct}
+_dirin2D=${Eta_binctl}/2D
+_dirin3D=${Eta_binctl}/3D
+_ctl2D=${Eta_ucl}/CTLTEMPLATE_2D
+_ctl3D=${Eta_ucl}/CTLTEMPLATE_3D
+_dirout=${Eta_netcdf}
+_dirtemp=${Eta_run}/netcdf_temp
+_hh=$(echo ${_datai} | cut -c9-10)
+#####################################################################
+
+mkdir -p  ${_dirtemp} ${_dirout} ${_dirtemp}
+#Liga/delisga variaveis 3D netcdf (ON/OFF)
+_gera3D=ON
+
+if [ ! -e "$_ctl3D" ] ; then
+_dirin2D=${Eta_binctl}/2D
+_dirin3D=${Eta_binctl}/3D
+_ctl3D=${_ctl2D}
+_niveis=$(cat ${_ctl2D} | grep -iF ZDEF | awk '{print $2}')
+_nvars=$(cat ${_ctl2D} | grep -iF VARS | head -1 | awk '{print $2}')
+_tot2=$(echo "$_nvars + 1" | bc)
+_vars=$(tail -${_tot2} ${_ctl2D} | head -${_totvars} | awk '{print $1}')
+_vars2D=$(tail -${_tot2} ${_ctl2D} | head -${_nvars} | grep -v ${_niveis} | awk '{print $1}')
+_vars3D=$(tail -${_tot2} ${_ctl2D} | head -${_nvars} | grep    ${_niveis} | awk '{print $1}')
+_nvars2D=$(tail -${_tot2} ${_ctl2D} | head -${_nvars} | grep -v ${_niveis} | wc -l)
+_nvars3D=$(tail -${_tot2} ${_ctl3D} | head -${_nvars} | grep   ${_niveis} | wc -l)
+_flag2D=
+_flag3D=
+else
+_nvars2D=$(cat ${_ctl2D} | grep -iF VARS | head -1 | awk '{print $2}')
+_nvars3D=$(cat ${_ctl3D} | grep -iF VARS | head -1 | awk '{print $2}')
+_tot2D=$(echo "$_nvars2D + 1" | bc)
+_tot3D=$(echo "$_nvars3D + 1" | bc)
+_vars2D=$(tail -${_tot2D} ${_ctl2D} | head -${_nvars2D} | awk '{print $1}')
+_vars3D=$(tail -${_tot3D} ${_ctl3D} | head -${_nvars3D} | awk '{print $1}')
+_flag2D=_2D
+_flag3D=_3D
+fi
+
+let _nvars2D=${_nvars2D}-1
+_vars2D=(${_vars2D})
+
+let _nvars3D=${_nvars3D}-1
+_vars3D=(${_vars3D})
+
+#corrigi o _ nos nomes
+_qtechar=$(echo ${_exp} | wc -L)
+_lastchar=$(echo ${_exp} | cut -c${_qtechar})
+if [  ${_lastchar} == "_" ] ; then
+_expf=${_exp}
+else
+_expf=${_exp}"_"
+fi
+echo ${_expf}
+
+rm -f ${_dirtemp}/cdo_list_*.txt
+###monta as listas pro cdo processar com o xargs
+_contvar=0
+while [[ ${_contvar} -le ${_nvars2D} ]];do
+_var=${_vars2D[${_contvar}]}
+_varm=$(echo $_var |  tr '[A-Za-z]' '[a-zA-Z]')
+echo "-selname,${_varm} -import_binary CTLNAME DIRTMP/EXPNAME${_var}_proximo.nc" >> ${_dirtemp}/cdo_list_import2D_templ.txt
+echo "DIRTMP/${_expf}${_var}_DATAI_MESC*.nc DIROUT/${_expf}${_var}_DATAI_DATAP.nc" >> ${_dirtemp}/cdo_list_merge2D_templ.txt
+echo "DIRTMP/${_expf}${_var}_DATAI_*.nc DIROUT/${_expf}${_var}_DATAI.nc" >> ${_dirtemp}/cdo_list_merge2Dfim_templ.txt
+echo "-selname,${_varm} -import_binary CTLNAME DIRTMP/EXPNAME${_var}_DATAI_temp.nc" >> ${_dirtemp}/cdo_list_import2Dfirst_templ.txt
+let _contvar=$_contvar+1
+done
+
+_contvar=0
+while [[ ${_contvar} -le ${_nvars3D} ]];do
+_var=${_vars3D[${_contvar}]}
+_varm=$(echo $_var |  tr '[A-Za-z]' '[a-zA-Z]')
+echo "-selname,${_varm} -import_binary CTLNAME DIRTMP/EXPNAME${_var}_proximo.nc" >> ${_dirtemp}/cdo_list_import3D_templ.txt
+echo "DIRTMP/${_expf}${_var}_DATAI_MESC*.nc DIROUT/${_expf}${_var}_DATAI_DATAP.nc" >> ${_dirtemp}/cdo_list_merge3D_templ.txt
+echo "DIRTMP/${_expf}${_var}_DATAI_*.nc DIROUT/${_expf}${_var}_DATAI.nc" >> ${_dirtemp}/cdo_list_merge3Dfim_templ.txt
+echo "-selname,${_varm} -import_binary CTLNAME DIRTMP/EXPNAME${_var}_DATAI_temp.nc" >> ${_dirtemp}/cdo_list_import3Dfirst_templ.txt
+let _contvar=$_contvar+1
+done
+
+
+chmod 755 ${_dirtemp}/cdo_list_*.txt
+
+#Aguarda a criacao do diretorio 2D
+if [ ! -d "$_dirin2D" ]; then
+echo "DIRETORIO ${_dirin2D}  NAO EXISTE"
+sleep 240
+fi
+if [ ! -d "$_dirin2D" ]; then
+echo "DIRETORIO ${_dirin2D}  NAO EXISTE"
+sleep 240
+fi
+if [ ! -d "$_dirin2D" ]; then
+echo "DIRETORIO ${_dirin2D}  NAO EXISTE"
+exit
+fi
+
+cd ${_dirin2D}
+
+##############################################################
+#Verifica se ja existe o arquivo de controle
+#Se tem ele executa de onde parou
+##############################################################
+if [ -e "${_dirtemp}/lista_controle.txt" ] ; then
+
+##############################################################
+#Executa o recorte das variaveis
+##############################################################
+#Cria a variavel zerada apenas para inicializar
+_proxdata=0
+while [[ $_proxdata -lt $_dataf ]];do
+
+if [ ! -e "$_ctl3D" ] ; then
+_ultimo=$(grep _2D ${_dirtemp}/lista_controle.txt | tail -1)
+else
+_ultimo=$(cat ${_dirtemp}/lista_controle.txt | tail -1)
+fi
+_ultdata=$(echo ${_ultimo} | cut -d+ -f2 | cut -c1-10)
+_ultmes=$(echo ${_ultimo} | cut -d+ -f2 | cut -c1-6)
+_mes2=$(echo ${_ultdata} | cut -c1-6)
+
+#Faz o recorte ate a data final
+_proxdata=$(${_CALDATE} ${_ultdata} + ${_frequencia}h 'yyyymmddhh')
+_proximo=$(ls *${_datai}+${_proxdata}*.bin)
+_basename=${_expf}${_datai}+${_proxdata}${_flag2D}
+_tamanhof=$(tail -1 ${_dirtemp}/tamanho_controle.txt)
+
+
+#tolerancia do tamanho, 12 bytes a mais ou a menos
+_tamanhomax=$(echo "$_tamanhof + 5000" | bc)
+_tamanhomin=$(echo "$_tamanhof - 5000" | bc)
+#_tamanhomin=$(echo "$_tamanhof - 12" | bc)
+
+##############################################################
+#Verifica se o tamanho esta ok
+#Verifica se o arquivo ja esta pronto
+##############################################################
+
+_verifica=$(find . -name "${_proximo}" -print | wc -l)
+_tentativa=0
+while [[ ${_tentativa} -le "20" && ${_verifica} -eq "0" ]];do
+echo "ARQUIVO NAO ENCONTRADO"
+echo "PROCURANDO ... ... ${_proximo}"
+echo "TENTATIVA ${_tentativa}"
+sleep 300
+_proximo=$(ls *${_datai}+${_proxdata}*.bin)
+_basename=${_expf}${_datai}+${_proxdata}${_flag2D}
+_verifica=$(find . -name "${_proximo}" -print | wc -l)
+let _tentativa=${_tentativa}+1
+
+if [  $_tentativa -eq 20 ] ; then
+echo "ARQUIVO NAO ENCONTRADO, ${_tentativa} tentativas"
+exit
+fi
+done
+
+_tamanho=$(du -sk ${_proximo} | awk '{print $1}')
+if [[  $_tamanho -lt $_tamanhomin ||  $_tamanho -gt $_tamanhomax ]] ; then
+#verifica novamente pois pode acontecer do arquivo estar sendo escrito
+sleep 30
+_tamanho=$(du -sk ${_proximo} | awk '{print $1}')
+if [[  $_tamanho -lt $_tamanhomin ||  $_tamanho -gt $_tamanhomax ]] ; then
+echo ${_proximo}
+echo "PROBLEMA NO TAMANHO DO ARQUIVO BINARIO, VERIFICAR"
+exit
+fi
+fi
+
+echo "Executando recorte ${_basename}"
+
+_ctl=${_basename}.ctl  
+
+sed    "s:CTLNAME:${_ctl}:g"     ${_dirtemp}/cdo_list_import2D_templ.txt > ${_dirtemp}/cdo_list_import2D.txt
+sed -i "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_import2D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_import2D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_import2D.txt
+
+_list=$(wc -l ${_dirtemp}/cdo_list_import2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_import2D.txt | xargs -n 4 -P ${_list} ${_CDO} -s --no_history -f nc4 -z zip_6
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars2D} ]];do
+_var=${_vars2D[${_contvar}]}
+mv ${_dirtemp}/${_expf}${_var}_proximo.nc ${_dirtemp}/${_expf}${_var}_${_datai}_${_proxdata}.nc
+let _contvar=$_contvar+1
+done
+
+
+sed -i "s/${_ultimo}/${_basename}/g"  ${_dirtemp}/lista_controle.txt 
+
+
+################################
+######GERA OS RECORTES NC 3D
+################################
+if [  ${_gera3D} == "ON" ] ; then
+cd ${_dirin3D}
+#VERIFICA SE EXISTE O ARQUIVO 3D no controle
+#SE NAO EXISTE ELE CONTINUA
+_proximo=${_expf}${_datai}+${_proxdata}${_flag3D}.bin
+_basename=${_expf}${_datai}+${_proxdata}${_flag3D}
+if [ -e "${_dirin3D}/${_proximo}" ] ; then
+
+_ctl=${_basename}.ctl  
+
+echo "Executando recorte ${_basename}"
+
+sed    "s:CTLNAME:${_ctl}:g"    ${_dirtemp}/cdo_list_import3D_templ.txt > ${_dirtemp}/cdo_list_import3D.txt
+sed -i "s:DIRTMP:${_dirtemp}:g" ${_dirtemp}/cdo_list_import3D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_import3D.txt
+sed -i "s:DATAI:${_datai}:g"    ${_dirtemp}/cdo_list_import3D.txt
+
+_list=$(wc -l ${_dirtemp}/cdo_list_import3D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_import3D.txt  | xargs -n 4 -P ${_list} ${_CDO} -s --no_history -f nc4 -z zip_6
+
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars3D} ]];do
+_var=${_vars3D[${_contvar}]}
+mv ${_dirtemp}/${_expf}${_var}_proximo.nc ${_dirtemp}/${_expf}${_var}_${_datai}_${_proxdata}.nc
+let _contvar=$_contvar+1
+done
+
+if [ ! -e "$_ctl3D" ] ; then
+_ultfile=$(grep _3D ${_dirtemp}/lista_controle.txt | tail -1)
+else
+_ultfile=$(cat ${_dirtemp}/lista_controle.txt | tail -1)
+fi
+sed -i "s:${_ultfile}:${_basename}:g"  ${_dirtemp}/lista_controle.txt 
+
+fi
+cd ${_dirin2D}
+fi
+
+if [[  $_proxdata -eq $_dataf &&  ${_tempo_rodada} -le "744" ]] ; then
+#####################################################################################
+#################INICIO JUNTA RODADA CURTA###########################################
+#####################################################################################
+cd ${_dirtemp}
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge2Dfim_templ.txt > ${_dirtemp}/cdo_list_merge2Dfim.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge2Dfim.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge2Dfim.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge2Dfim.txt
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge3Dfim_templ.txt > ${_dirtemp}/cdo_list_merge3Dfim.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge3Dfim.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge3Dfim.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge3Dfim.txt
+
+if [  ${_gera3D} == "ON" ] ; then
+#compacta tudo 2D e 3D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2Dfim.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2Dfim.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+_list=$(wc -l ${_dirtemp}/cdo_list_merge3Dfim.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge3Dfim.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+else
+#compacta somente 2D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2Dfim.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2Dfim.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+fi
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars2D} ]];do
+_var=${_vars2D[${_contvar}]}
+rm -f ${_dirtemp}/${_expf}${_var}_${_datai}_*.nc 
+let _contvar=$_contvar+1
+done
+_contvar=0
+while [[ $_contvar -le ${_nvars3D} ]];do
+_var=${_vars3D[${_contvar}]}
+rm -f ${_dirtemp}/${_expf}${_var}_${_datai}_*.nc 
+let _contvar=$_contvar+1
+done
+#####################################################################################
+#################FIM JUNTA RODADA CURTA##############################################
+#####################################################################################
+else
+#####################################################################################
+#################INICIO JUNTA RODADA LONGA###########################################
+#####################################################################################
+####################
+#####JUNTA MES A MES
+####################
+
+_mes1=$(echo ${_proxdata} | cut -c1-6)
+
+if [[  $_mes1 != $_mes2  &&  ${_tempo_rodada} -gt  "744"    ]] ; then
+
+cd ${_dirtemp}
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge2D_templ.txt > ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:MESC:${_mes2}:g"       ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAP:${_ultmes}:g"    ${_dirtemp}/cdo_list_merge2D.txt
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge3D_templ.txt > ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:MESC:${_mes2}:g"       ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAP:${_ultmes}:g"    ${_dirtemp}/cdo_list_merge3D.txt
+
+if [  ${_gera3D} == "ON" ] ; then
+#compacta tudo 2D e 3D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+_list=$(wc -l ${_dirtemp}/cdo_list_merge3D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge3D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+else
+#compacta somente 2D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+fi
+
+cd ${_dirtemp}
+for _file in $(ls ${_expf}${_datai}_${_ultmes}*.nc)
+do 
+rm -f ${_file}
+done
+
+cd ${_dirin2D}
+fi
+
+############################################################################################
+#####SE FOR A ULTIMA DATA, MAS AINDA ESTA NO MESMO MES, JUNTA PARA FINALIZAR (RODADA LONGA) 
+###########################################################################################
+
+if [[  $_proxdata -eq $_dataf ]] ; then
+
+_anof=$(echo ${_proxdata} | cut -c1-4)
+_mescorr=$(echo ${_proxdata} | cut -c1-6)
+
+cd ${_dirtemp}
+
+_verfile=$(ls ${_expf}TP2M_${_datai}_${_mescorr}*.nc | wc -l)
+
+if [[  $_verfile -eq 1 ]] ; then
+
+for _file in $(ls ${_expf}${_datai}_${_mescorr}*.nc)
+do 
+cp ${_file} ${_dirout}
+done
+
+else
+
+sed    "s:DIRTMP:${_dirtemp}:g" ${_dirtemp}/cdo_list_merge2D_templ.txt > ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DIROUT:${_dirout}:g"  ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:EXPNAME:${_expf}:g"   ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:MESC:${_mescorr}:g"   ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAI:${_datai}:g"    ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAP:${_mescorr}:g"  ${_dirtemp}/cdo_list_merge2D.txt
+
+sed    "s:DIRTMP:${_dirtemp}:g" ${_dirtemp}/cdo_list_merge3D_templ.txt > ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DIROUT:${_dirout}:g"  ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:EXPNAME:${_expf}:g"   ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:MESC:${_mescorr}:g"   ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAI:${_datai}:g"    ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAP:${_mescorr}:g"  ${_dirtemp}/cdo_list_merge3D.txt
+
+if [  ${_gera3D} == "ON" ] ; then
+#compacta tudo 2D e 3D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+_list=$(wc -l ${_dirtemp}/cdo_list_merge3D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge3D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+else
+#compacta somente 2D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetimefi
+fi
+
+fi
+#esse fi fecha o if do ver file
+
+cd ${_dirtemp}
+for _file in $(ls ${_expf}${_datai}_${_mescorr}*.nc)
+do 
+rm -f ${_file}
+done
+
+cd ${_dirin2D}
+fi
+#####################################################################################
+#################FIM JUNTA RODADA LONGA##############################################
+#####################################################################################
+fi
+
+done
+
+
+else
+
+##############################################################
+#Caso nao exista o arquivo de controle
+#Executa o recorte pela primeira vez
+##############################################################
+_primeiro=$(ls *${_datai}+${_datai}*.bin)
+_primctl=$(ls *${_datai}+${_datai}*.ctl)
+
+#verifica se o primeiro horario esta no disco senao espera 
+_verprimeiro=$(find . -name "${_primctl}" -print | wc -l)
+#espera um pouco para verificar se o arquivo foi gerado
+if [ ${_verprimeiro} -eq "0" ] ; then
+sleep 30
+echo "Esperando primeiro horario" 
+_primeiro=$(ls *${_datai}+${_datai}*.bin)
+fi
+
+echo $_primeiro
+
+_basename=${_expf}${_datai}+${_datai}${_flag2D}
+_tamanho=$(du -sk ${_primeiro} | awk '{print $1}')
+_ctl=${_basename}.ctl
+
+TOPO e LSMK
+${_CDO} -s --no_history -f nc4 -z zip_6 -selname,topo -import_binary ${_dirin2D}/${_expf}${Run_Date}_FF.ctl ${_dirout}/${_expf}TOPO_${Run_Date}.nc
+${_CDO} -s --no_history -f nc4 -z zip_6 -selname,lsmk -import_binary ${_dirin2D}/${_expf}${Run_Date}_FF.ctl ${_dirout}/${_expf}LSMK_${Run_Date}.nc
+echo "Executando recorte ${_basename}"
+
+sed    "s:CTLNAME:${_ctl}:g"   ${_dirtemp}/cdo_list_import2Dfirst_templ.txt > ${_dirtemp}/cdo_list_import2Dfirst.txt
+sed -i "s:EXPNAME:${_expf}:g"  ${_dirtemp}/cdo_list_import2Dfirst.txt
+sed -i "s:DIRTMP:$_dirtemp:g"  ${_dirtemp}/cdo_list_import2Dfirst.txt
+sed -i "s:DATAI:${_datai}:g"   ${_dirtemp}/cdo_list_import2Dfirst.txt
+
+_list=$(wc -l ${_dirtemp}/cdo_list_import2Dfirst.txt | awk '{print $1}')
+
+dir=$(pwd)
+echo $dir
+chmod 755 ${_dirtemp}/cdo_list_import2Dfirst.txt
+echo ${_list}
+
+cat  ${_dirtemp}/cdo_list_import2Dfirst.txt  | xargs -n 4 -P ${_list} ${_CDO} -s --no_history -f nc4 -z zip_6
+
+echo ${_basename}  >> ${_dirtemp}/lista_controle.txt
+echo ${_tamanho}   >> ${_dirtemp}/tamanho_controle.txt
+
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars2D} ]];do
+_var=${_vars2D[${_contvar}]}
+mv ${_dirtemp}/${_expf}${_var}_${_datai}_temp.nc ${_dirtemp}/${_expf}${_var}_${_datai}_${_datai}.nc
+let _contvar=$_contvar+1
+done
+
+
+
+############################
+######GERA OS RECORTES NC 3D
+############################
+if [  ${_gera3D} == "ON" ] ; then
+cd ${_dirin3D}
+#VERIFICA SE EXISTE O ARQUIVO 3D
+#SE NAO EXISTE ELE CONTINUA
+_primeiro=${_expf}${_datai}+${_datai}${_flag3D}.bin
+if [ -e "${_dirin3D}/${_primeiro}" ] ; then
+
+_basename=${_expf}${_datai}+${_datai}${_flag3D}
+_ctl=${_basename}.ctl  
+
+echo "Executando recorte ${_basename}"
+
+sed    "s:CTLNAME:${_ctl}:g"   ${_dirtemp}/cdo_list_import3Dfirst_templ.txt > ${_dirtemp}/cdo_list_import3Dfirst.txt
+sed -i "s:EXPNAME:${_expf}:g"  ${_dirtemp}/cdo_list_import3Dfirst.txt
+sed -i "s:DIRTMP:$_dirtemp:g"  ${_dirtemp}/cdo_list_import3Dfirst.txt
+sed -i "s:DATAI:${_datai}:g"   ${_dirtemp}/cdo_list_import3Dfirst.txt
+
+_list=$(wc -l ${_dirtemp}/cdo_list_import3Dfirst.txt | awk '{print $1}')
+cat  ${_dirtemp}/cdo_list_import3Dfirst.txt  | xargs -n 4 -P ${_list} ${_CDO} -s --no_history -f nc4 -z zip_6
+
+echo ${_basename} >> ${_dirtemp}/lista_controle.txt
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars3D} ]];do
+_var=${_vars3D[${_contvar}]}
+mv ${_dirtemp}/${_expf}${_var}_${_datai}_temp.nc ${_dirtemp}/${_expf}${_var}_${_datai}_${_datai}.nc
+let _contvar=$_contvar+1
+done
+
+fi
+cd ${_dirin2D}
+fi
+
+
+##############################################################
+#Continua para a proxima data ate a data final
+##############################################################
+
+if [ ! -e "$_ctl3D" ] ; then
+_ultimo=$(grep _2D ${_dirtemp}/lista_controle.txt | tail -1)
+else
+_ultimo=$(cat ${_dirtemp}/lista_controle.txt | tail -1)
+fi
+
+_ultdata=$(echo ${_ultimo} | cut -d+ -f2 | cut -c1-10)
+_ultmes=$(echo ${_ultimo} | cut -d+ -f2 | cut -c1-6)
+_mes2=$(echo ${_ultdata} | cut -c1-6)
+_proxdata=$(${_CALDATE} ${_ultdata} + ${_frequencia}h 'yyyymmddhh')
+
+while [[ $_proxdata -le $_dataf ]];do
+_tamanhof=$(tail -1 ${_dirtemp}/tamanho_controle.txt)
+_proximo=$(ls *${_datai}+${_proxdata}*.bin)
+_basename=${_expf}${_datai}+${_proxdata}${_flag2D}
+
+#tolerancia do tamanho, 4 bytes a mais ou a menos
+_tamanhomax=$(echo "$_tamanhof + 5000" | bc)
+_tamanhomin=$(echo "$_tamanhof - 5000" | bc)
+
+
+##############################################################
+#Verifica se o tamanho esta ok
+#Verifica se o arquivo ja esta pronto
+##############################################################
+
+_verifica=$(find . -name "${_proximo}" -print | wc -l)
+_tentativa=0
+while [[ ${_tentativa} -le "20" && ${_verifica} -eq "0" ]];do
+echo "ARQUIVO NAO ENCONTRADO"
+echo "PROCURANDO ... ... ${_proximo}"
+echo "TENTATIVA ${_tentativa}"
+sleep 300
+_proximo=$(ls *${_datai}+${_proxdata}*.bin)
+_basename=${_expf}${_datai}+${_proxdata}${_flag2D}
+_verifica=$(find . -name "${_proximo}" -print | wc -l)
+let _tentativa=${_tentativa}+1
+
+if [  $_tentativa -eq 20 ] ; then
+echo "ARQUIVO NAO ENCONTRADO, ${_tentativa} tentativas"
+exit
+fi
+done
+
+_tamanho=$(du -sk ${_proximo} | awk '{print $1}')
+if [[  $_tamanho -lt $_tamanhomin ||  $_tamanho -gt $_tamanhomax ]] ; then
+#verifica novamente pois pode acontecer do arquivo estar sendo escrito
+sleep 30
+_tamanho=$(du -sk ${_proximo} | awk '{print $1}')
+if [[  $_tamanho -lt $_tamanhomin ||  $_tamanho -gt $_tamanhomax ]] ; then
+echo ${_proximo}
+echo "PROBLEMA NO TAMANHO DO ARQUIVO BINARIO, VERIFICAR"
+exit
+fi
+fi
+
+_ctl=${_basename}.ctl 
+
+echo "Executando recorte ${_basename}"
+
+
+sed    "s:CTLNAME:${_ctl}:g"     ${_dirtemp}/cdo_list_import2D_templ.txt > ${_dirtemp}/cdo_list_import2D.txt
+sed -i "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_import2D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_import2D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_import2D.txt
+
+_list=$(wc -l ${_dirtemp}/cdo_list_import2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_import2D.txt | xargs -n 4 -P ${_list} ${_CDO} -s --no_history -f nc4 -z zip_6
+
+
+date >> ${Eta_run}/DATA.txt
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars2D} ]];do
+_var=${_vars2D[${_contvar}]}
+mv ${_dirtemp}/${_expf}${_var}_proximo.nc ${_dirtemp}/${_expf}${_var}_${_datai}_${_proxdata}.nc
+let _contvar=$_contvar+1
+done
+
+if [ ! -e "$_ctl3D" ] ; then
+_ultvar=$(grep _2D ${_dirtemp}/lista_controle.txt | tail -1)
+else
+_ultvar=$(cat ${_dirtemp}/lista_controle.txt | tail -1)
+fi
+sed -i "s/${_ultvar}/${_basename}/g"  ${_dirtemp}/lista_controle.txt 
+
+
+############################
+######GERA OS RECORTES NC 3D
+############################
+if [  ${_gera3D} == "ON" ] ; then
+cd ${_dirin3D}
+#VERIFICA SE EXISTE O ARQUIVO 3D no controle
+#SE NAO EXISTE ELE CONTINUA
+_proximo=${_expf}${_datai}+${_proxdata}${_flag3D}.bin
+_basename=${_expf}${_datai}+${_proxdata}${_flag3D}
+
+
+if [ -e "${_dirin3D}/${_proximo}" ] ; then
+
+_basename=${_expf}${_datai}+${_proxdata}${_flag3D}
+_ctl=${_basename}.ctl  
+
+echo "Executando recorte ${_basename}"
+
+sed    "s:CTLNAME:${_ctl}:g"     ${_dirtemp}/cdo_list_import3D_templ.txt > ${_dirtemp}/cdo_list_import3D.txt
+sed -i "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_import3D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_import3D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_import3D.txt
+
+_list=$(wc -l ${_dirtemp}/cdo_list_import3D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_import3D.txt | xargs -n 4 -P ${_list} ${_CDO} -s --no_history -f nc4 -z zip_6
+
+
+_contvar=0
+while [[ $_contvar -le ${_nvars3D} ]];do
+_var=${_vars3D[${_contvar}]}
+mv ${_dirtemp}/${_expf}${_var}_proximo.nc ${_dirtemp}/${_expf}${_var}_${_datai}_${_proxdata}.nc
+let _contvar=$_contvar+1
+done
+
+if [ ! -e "$_ctl3D" ] ; then
+_ultfile=$(grep _3D ${_dirtemp}/lista_controle.txt | tail -1)
+else
+_ultfile=$(cat ${_dirtemp}/lista_controle.txt | tail -1)
+fi
+
+sed -i "s/${_ultfile}/${_basename}/g"  ${_dirtemp}/lista_controle.txt 
+
+fi
+cd ${_dirin2D}
+
+fi
+
+
+if [[  $_proxdata -eq $_dataf &&  ${_tempo_rodada} -le "744" ]] ; then
+#####################################################################################
+#################INICIO JUNTA RODADA CURTA###########################################
+#####################################################################################
+cd ${_dirtemp}
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge2Dfim_templ.txt > ${_dirtemp}/cdo_list_merge2Dfim.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge2Dfim.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge2Dfim.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge2Dfim.txt
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge3Dfim_templ.txt > ${_dirtemp}/cdo_list_merge3Dfim.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge3Dfim.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge3Dfim.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge3Dfim.txt
+
+if [  ${_gera3D} == "ON" ] ; then
+#compacta tudo 2D e 3D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2Dfim.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2Dfim.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+_list=$(wc -l ${_dirtemp}/cdo_list_merge3Dfim.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge3Dfim.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+else
+#compacta somente 2D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2Dfim.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2Dfim.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+fi
+
+##este loop é apenas para apagar e mover os arquivos
+_contvar=0
+while [[ $_contvar -le ${_nvars2D} ]];do
+_var=${_vars2D[${_contvar}]}
+rm -f ${_dirtemp}/${_expf}${_var}_${_datai}_*.nc 
+let _contvar=$_contvar+1
+done
+_contvar=0
+while [[ $_contvar -le ${_nvars3D} ]];do
+_var=${_vars3D[${_contvar}]}
+rm -f ${_dirtemp}/${_expf}${_var}_${_datai}_*.nc 
+let _contvar=$_contvar+1
+done
+#####################################################################################
+#################FIM JUNTA RODADA CURTA##############################################
+#####################################################################################
+else
+#####################################################################################
+#################INICIO JUNTA RODADA LONGA###########################################
+#####################################################################################
+####################
+#####JUNTA MES A MES
+####################
+
+
+echo "ENTREI AQUI"
+
+
+_mes1=$(echo ${_proxdata} | cut -c1-6)
+
+if [[  $_mes1 != $_mes2  &&  ${_tempo_rodada} -gt  "744"    ]] ; then
+
+cd ${_dirtemp}
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge2D_templ.txt > ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:EXPNAME:${_expf}:g"     ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:MESC:${_mes2}:g"       ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAP:${_ultmes}:g"    ${_dirtemp}/cdo_list_merge2D.txt
+
+sed    "s:DIRTMP:${_dirtemp}:g"  ${_dirtemp}/cdo_list_merge3D_templ.txt > ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DIROUT:${_dirout}:g"   ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:EXPNAME:${_expf}:g"     ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:MESC:${_mes2}:g"       ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAI:${_datai}:g"     ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAP:${_ultmes}:g"    ${_dirtemp}/cdo_list_merge3D.txt
+
+if [  ${_gera3D} == "ON" ] ; then
+#compacta tudo 2D e 3D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+_list=$(wc -l ${_dirtemp}/cdo_list_merge3D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge3D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+else
+#compacta somente 2D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetimefi
+fi
+
+cd ${_dirtemp}
+for _file in $(ls ${_expf}${_datai}_${_ultmes}*.nc)
+do 
+rm -f ${_file}
+done
+
+cd ${_dirin2D}
+fi
+
+
+############################################################################################
+#####SE FOR A ULTIMA DATA, MAS AINDA ESTA NO MESMO MES, JUNTA PARA FINALIZAR (RODADA LONGA) 
+###########################################################################################
+
+if [[  $_proxdata -eq $_dataf ]] ; then
+
+_mescorr=$(echo ${_proxdata} | cut -c1-6)
+
+cd ${_dirtemp}
+
+_verfile=$(ls ${_expf}TP2M_${_datai}_${_mescorr}*.nc | wc -l)
+
+if [[  $_verfile -eq 1 ]] ; then
+
+for _file in $(ls ${_expf}${_datai}_${_mescorr}*.nc)
+do 
+cp ${_file} ${_dirout}
+done
+
+else
+
+sed    "s:DIRTMP:${_dirtemp}:g" ${_dirtemp}/cdo_list_merge2D_templ.txt > ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DIROUT:${_dirout}:g"  ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:MESC:${_mescorr}:g"   ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAI:${_datai}:g"    ${_dirtemp}/cdo_list_merge2D.txt
+sed -i "s:DATAP:${_mescorr}:g"  ${_dirtemp}/cdo_list_merge2D.txt
+
+sed    "s:DIRTMP:${_dirtemp}:g" ${_dirtemp}/cdo_list_merge3D_templ.txt > ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DIROUT:${_dirout}:g"  ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:EXPNAME:${_expf}:g"    ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:MESC:${_mescorr}:g"   ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAI:${_datai}:g"    ${_dirtemp}/cdo_list_merge3D.txt
+sed -i "s:DATAP:${_mescorr}:g"  ${_dirtemp}/cdo_list_merge3D.txt
+
+if [  ${_gera3D} == "ON" ] ; then
+#compacta tudo 2D e 3D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+_list=$(wc -l ${_dirtemp}/cdo_list_merge3D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge3D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetime
+else
+#compacta somente 2D
+_list=$(wc -l ${_dirtemp}/cdo_list_merge2D.txt | awk '{print $1}')
+cat ${_dirtemp}/cdo_list_merge2D.txt | xargs -n 2 -P ${_list} ${_CDO} -s --no_history -z zip_6 -mergetimefi
+fi
+
+fi
+#esse fi fecha o if do ver file
+
+cd ${_dirtemp}
+for _file in $(ls ${_expf}${_datai}_${_mescorr}*.nc)
+do 
+rm -f ${_file}
+done
+
+cd ${_dirin2D}
+fi
+#####################################################################################
+#################FIM JUNTA RODADA LONGA##############################################
+#####################################################################################
+fi
+
+
+if [ ! -e "$_ctl3D" ] ; then
+_ultimo=$(grep _2D  ${_dirtemp}/lista_controle.txt |tail -1)
+else
+_ultimo=$(cat  ${_dirtemp}/lista_controle.txt |tail -1)
+fi
+
+_ultdata=$(echo ${_ultimo} | cut -d+ -f2 | cut -c1-10)
+_ultmes=$(echo ${_ultimo} | cut -d+ -f2 | cut -c1-6)
+_mes2=$(echo ${_ultdata} | cut -c1-6)
+_proxdata=$(${_CALDATE} ${_ultdata} + ${_frequencia}h 'yyyymmddhh')
+done
+fi
+
+#### Cria os acumulados de 24 horas
+echo "GERANDO ACUMULADO DE PREC, TMAX e TMIN 24 HORAS"
+cd ${_dirout}
+if [  ${_hh} == "00" ] ; then
+${_CDO} timselsum,24,13 ${_expf}PREC_${_datai}.nc ${_expf}PREC_${_datai}_acum24h_templ.nc
+${_CDO} shifttime,+690minutes ${_expf}PREC_${_datai}_acum24h_templ.nc ${_expf}PREC_${_datai}_acum24h.nc
+
+${_CDO}  timselmax,24,1 ${_expf}MXTP_${_datai}.nc ${_expf}MXTP_${_datai}_max24h_temp.nc
+${_CDO}  timselmin,24,1 ${_expf}MNTP_${_datai}.nc ${_expf}MNTP_${_datai}_min24h_temp.nc
+${_CDO} shifttime,-750minutes ${_expf}MXTP_${_datai}_max24h_temp.nc ${_expf}MXTP_${_datai}_max24h.nc
+${_CDO} shifttime,-750minutes ${_expf}MNTP_${_datai}_min24h_temp.nc ${_expf}MNTP_${_datai}_min24h.nc
+
+else
+
+${_CDO} timselsum,24,1 ${_expf}PREC_${_datai}.nc ${_expf}PREC_${_datai}_acum24h.nc
+
+${_CDO}  timselmax,24,13 ${_expf}MXTP_${_datai}.nc ${_expf}MXTP_${_datai}_max24h_temp.nc
+${_CDO}  timselmin,24,13 ${_expf}MNTP_${_datai}.nc ${_expf}MNTP_${_datai}_min24h_temp.nc
+${_CDO} shifttime,-750minutes ${_expf}MXTP_${_datai}_max24h_temp.nc ${_expf}MXTP_${_datai}_max24h.nc
+${_CDO} shifttime,-750minutes ${_expf}MNTP_${_datai}_min24h_temp.nc ${_expf}MNTP_${_datai}_min24h.nc
+
+fi
+
+rm -f ${_expf}MXTP_${_datai}_max24h_temp.nc
+rm -f ${_expf}MNTP_${_datai}_min24h_temp.nc
+
+rm -f ${_expf}PREC_${_datai}_acum24h_templ.nc
+chmod -R 755 ${_dirout}
+
+
+exit

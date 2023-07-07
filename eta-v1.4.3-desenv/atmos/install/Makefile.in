@@ -1,0 +1,36 @@
+
+.SILENT:
+ROOT   = etaroot
+SRC    = $(ROOT)/src
+LIBDIR = $(ROOT)/lib
+EXEDIR = $(ROOT)/exe
+
+LIBDIRS   = $(SRC)/prep/util    \
+            $(SRC)/prep/initbc
+
+EXEDIRS   = $(SRC)/prep/topo     \
+            $(SRC)/prep/initbc \
+            $(SRC)/prep/vgreen \
+            $(SRC)/prep/sst \
+	    $(SRC)/etafcst 
+
+exe: lib   
+	@for dir in $(EXEDIRS) ; \
+	  do \
+	  echo " "; \
+	  echo Making executable from directory $$dir ;\
+	  (cd $$dir; \
+	  $(MAKE) exe "LIBDIR=$(LIBDIR)" "EXEDIR=$(EXEDIR)"; if [ $$? != 0 ] ; then \
+	      echo "Exit status from make was $$?" ; exit 1 ; fi ;) ;\
+	done
+
+lib:
+	@for dir in $(LIBDIRS) ;\
+	  do \
+	  echo " ";\
+	  echo Making library from directory $$dir ;\
+	  (cd $$dir; \
+	  $(MAKE) lib "LIBDIR=$(LIBDIR)" ; if [ $$? != 0 ] ; then \
+	    echo "Exit status from make was $$?" ; exit 1 ; fi ;) ;\
+	done
+

@@ -1,0 +1,12 @@
+##########################
+#SBATCH -o EtaFcst.o
+#SBATCH -e EtaFcst.e
+#SBATCH --nodes=NNodes
+#SBATCH --ntasks-per-node=NCpusNode
+#SBATCH --time=1:10:00
+#SBATCH -J FQNAME
+#SBATCH -A inpe
+#SBATCH -p processing
+module load openmpi/4.1.2-intel
+module load nvhpc/23.1
+#

@@ -1,0 +1,48 @@
+#!/bin/bash -x
+# PbsSlurm  
+
+# VARIAVEIS
+FctPos=FcstI
+
+FctPosF=`printf "%06d" "${FctPos}"`
+FctF=`printf "%06d" "${Fct}"`
+
+cd ${Eta_run}
+
+LastArq="False"
+mmddhh=`echo ${Run_Date} |cut -c 5-10`
+yymmddhh=`echo ${Run_Date} |cut -c 3-10`
+Run_Date_Hex=`printf "%0.5x" "${yymmddhh}"`
+while [ "${LastArq}" != "True" ] ; do
+# IniJobControl
+  if [ -s ${Eta_run}/FCSTDONE${FctPosF}.t00s ] ; then
+    hora=`echo ${FctPosF} |cut -c 1-6`
+    FctPos_Hex=`printf "%0.5x" "${FctPos}"`
+    cat ${Eta_run}/outjob_special.sh           \
+    | sed -e "s:HFCT:${FctPos}:g"              \
+    | sed -e "s:QUE:${QUE2}:g"                          \
+    | sed -e "s:PQNAME:"${Exp}${Run_Date_Hex}${FctPos_Hex}":g"          \
+    > ${Eta_run}/${mmddhh}oj${FctPosF}.sh
+    echo "submetido ${FctPosF}"
+    chmod 755 ${Eta_run}/${mmddhh}oj${FctPosF}.sh
+    ${Eta_run}/${mmddhh}oj${FctPosF}.sh
+    
+    # Submit Figuras
+    if [ "${FctPosF}" == "000000" ] ; then
+      lfigUP=`echo ${lfig}| tr '[:lower:]' '[:upper:]'`
+      if [ ${lfigUP} == TRUE ] ; then
+        ${QSB} ${Eta_run}/Figuras/submit_figuras.sh > ${Eta_run}/Fig.out
+      fi
+    fi
+    let FctPos=${FctPos}+${IntFct}*${NSPos}
+    FctPosF=`printf "%06d" ${FctPos}`
+  else
+   sleep 20  
+  fi 
+# EndJobControl
+  if ((10#${FctPosF}>10#${FctF})) ; then
+    LastArq="True" 
+  fi  
+done
+
+exit

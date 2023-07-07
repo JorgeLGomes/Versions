@@ -1,0 +1,100 @@
+#!/bin/bash -x
+
+cd ./scripts/BAMCLIMT126
+rm -f Run_process.sh  
+rm -f convert_sst_bam2bin.ksh  
+rm -f process.sh
+cd ../BESMT062
+rm -f besm_sst_grid0.25.nc 
+rm -f Run_process.sh            
+rm -f convert_sst_besm2monthlybin.ksh
+rm -f convert_sst_besm2bin.ksh  
+rm -f process.sh
+
+cd ../CFS
+rm -f CFS_deco.ksh
+rm -f get_CFS_wgetParallel.ksh
+rm -f sstcfs_grb2_deco.sh
+rm -f Get+process.sh
+
+cd ../ERA5
+rm -f deco_ERA5_O3.sh
+rm -f deco_ERA5_SST.sh
+rm -f gather_sst2s2s.ksh
+rm -f Get_ERA5_nc+process.sh
+rm -f deco_ERA5.sh
+rm -f Submit_deco.list
+
+cd ../gfs2gr0.25
+rm -f get_GFS_wgetParallel.ksh
+rm -f get_SST_noaa.ksh
+rm -f Get+process.sh
+rm -f get_GFS_ETAwrk_Parallel.ksh
+rm -f gfs2_deco.sh
+
+cd ../../atmos/BAMCLIMT126
+rm -Rf *
+cd ../BESMT062
+rm -Rf *
+cd ../CFS.01
+rm -Rf *
+cd ../ERA5
+rm -Rf *
+cd ../gfs2gr0.25
+rm -Rf *
+pwd
+
+cd ../ETAwrk
+rm -Rf BAMCLIMT126
+rm -Rf BESMT062
+rm -Rf CFS.01
+rm -Rf ERA5
+rm -Rf gfs2gr0.25
+
+
+cd ../../sst
+rm -fR BAMCLIMT126
+rm -Rf BESMT062
+rm -Rf CFS.01
+rm -Rf ERA5
+rm -Rf noaa
+
+cd ETAwrk
+rm -fR BAMCLIMT126
+rm -Rf BESMT062
+rm -Rf CFS.01
+rm -Rf ERA5
+rm -Rf noaa
+
+cd ../../soil/ETAwrk
+rm -Rf ERA5
+cd ../../util
+rm -f wgrib
+rm -f wgrib2
+
+cd ../dprep/exe
+rm -f *
+
+cd ../src/dgERA5
+make clean
+cd ../dgetacpt_eta15  
+make clean
+cd ../dggfs2gr0.5
+make clean
+cd ../dgetacpt_eta15_lendo_grib_como_CI_CC  
+make clean
+cd ../dggposeta
+make clean
+cd ../dgERA5_soil  
+make clean
+cd ../dgetacpt_eta40   
+make clean
+cd ../dglobal_bamclim
+make clean
+cd ../dgcfs        
+make clean
+cd ../dggfs2gr0.25                          
+make clean
+cd ../dglobal_cptec
+make clean
+

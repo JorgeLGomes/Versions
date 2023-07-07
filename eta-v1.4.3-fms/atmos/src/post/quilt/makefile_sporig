@@ -1,0 +1,103 @@
+################################################################################
+# 
+#     Makefile for Eta Coordinate Quilt
+#
+#     Use:
+#     make         -  build the executable
+#     make clean   -  start with a clean slate
+#
+#     The following macros will be of interest:
+#
+#         TARGET   - name of the executable
+#         FC       - name of Fortran compiler
+#         CPP      - name of CPP
+#         ARCH     - architecture
+#         CPPFLAGS - CPP flags
+#         OPTS     - compiler code optimizations
+#         LIST     - source listing
+#         SMP      - threading
+#         TRAPS    - runtime traps for floating point exceptions
+#         PROFILE  - source code profiling ( -pg )
+#         DEBUG    - -g
+#         MEM      - user data area and stack size
+#         MAP      - load map
+#         W3LIB    - w3lib
+#         BACIO    - bacio lib
+#         ESSL     - ESSL library
+#         MASS     - MASS library
+#         SEARCH   - library search location
+#
+#         VERSION  - This makefile for the MPI version of QUILT and 
+#                    a direct access file
+#
+#                     Jim Tuccillo - July 2000
+#
+#################################################################################
+#
+# Define the name of the executable
+#
+TARGET = quilt.x
+#
+# CPP, Compiler, and Linker Options
+#
+FC       = mpxlf_r
+CPP      = /lib/cpp -P
+ARCH     = pwr3
+CPPFLAGS = 
+OPTS     = -O3 -qstrict -qnosave -qarch=$(ARCH) -qmaxmem=-1 -NS2000
+LIST     = -qsource -qxref=full -qattr=full
+SMP      = 
+TRAPS    = 
+PROFILE  = 
+DEBUG    = -g
+MEM      = -bmaxdata:2000000000 -bmaxstack:256000000
+MAP      = -bmap:map -bloadmap:lm
+W3LIB    = /nwprod/w3lib90/w3lib_4_$(ARCH)
+BACIO    = /nwprod/w3lib90/bacio_4_$(ARCH)
+ESSL     = -lessl_r 
+MASS     = -lmass_r
+SEARCH   =
+#
+# Assemble Options
+#
+FFLAGS   = $(OPTS) $(LIST) $(TRAPS) $(PROFILE) $(DEBUG)
+FFLAGST  = $(OPTS) $(LIST) $(SMP) $(TRAPS) $(PROFILE) $(DEBUG)
+LDFLAGS  = $(MEM) $(MAP) $(SMP) $(PROFILE)
+LIBS     = $(W3LIB) $(BACIO) $(ESSL) $(MASS) $(SEARCH) 
+#
+#
+# Non-threaded object files
+#
+OBJS= QUILT.o SLP.o PARA_RANGE.o MPI_FIRST.o MPI_LAST.o COLLECT.o DIST.o
+#
+# Threaded object files
+#
+OBJST=
+#
+# Includes
+#
+INCLUDES=  parmeta parmsoil parmbuf
+#
+# Common Blocks
+#
+COMMS=	PARA.comm
+
+DEPS= $(COMMS) $(INCLUDES)
+
+.SUFFIXES:	.F .f .o
+
+.F.f:
+	$(CPP) $(CPPFLAGS) $< > $*.f
+
+$(TARGET):	$(OBJS) $(OBJST)
+	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(OBJST) $(LIBS) 
+
+$(OBJS):	$(DEPS)
+	$(FC) $(FFLAGS) -c $<
+
+$(OBJST):	$(DEPS)
+	$(FC) $(FFLAGST) -c $<
+
+clean:	
+	/bin/rm -f  $(TARGET) *.lst *.o lm map
+#

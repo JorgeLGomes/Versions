@@ -1,0 +1,56 @@
+#!/bin/bash -x
+
+#INCLUI os diretorios de scripts e de saida
+
+export LC_NUMERIC="en_US.UTF-8"
+Eta_ucl=${Eta_home_conf}/ucl
+
+west1=`head -1 ${Eta_home_conf}/scripts/corners.out | tail -1 | awk '{printf "%11s",$2}'` 
+#echo $west1
+west2=`head -1 ${Eta_home_conf}/scripts/corners.out | tail -1 |awk 'invertsgn = $2 * (-1) {printf "%11.6f",invertsgn}'` 
+#echo $west2
+east=`head -2 ${Eta_home_conf}/scripts/corners.out | tail -1 | awk '{printf "%11s",$2}'` 
+#echo $east
+north=`head -3 ${Eta_home_conf}/scripts/corners.out | tail -1 | awk '{printf "%11s",$2}'` 
+#echo $north
+south=`head -4 ${Eta_home_conf}/scripts/corners.out | tail -1 | awk '{printf "%11s",$2}'` 
+#echo $south
+res=`head -5 ${Eta_home_conf}/scripts/corners.out | tail -1 | awk '{printf "%11.6f",$2}'` 
+#echo $res
+
+imout1=`head -6 ${Eta_home_conf}/scripts/corners.out | tail -1| awk '{printf "%5s",$1}'`
+jmout1=`head -7 ${Eta_home_conf}/scripts/corners.out | tail -1| awk '{printf "%5s",$1}'` 
+
+#echo $imout1
+#echo $jmout1
+
+cat ${Eta_ucl}/CTLTEMPLATE_2D_temp    | sed "s:ptx:$imout1:g"       \
+                                      | sed "s:pty:$jmout1:g"       \
+                                      | sed "s:lonoeste:${west1}:g" \
+                                      | sed "s:latsul:${south}:g"   \
+  > ${Eta_ucl}/CTLTEMPLATE_2D
+#
+cat ${Eta_ucl}/CTLTEMPLATE_3D_temp    | sed "s:ptx:$imout1:g"       \
+                                      | sed "s:pty:$jmout1:g"       \
+                                      | sed "s:lonoeste:${west1}:g" \
+                                      | sed "s:latsul:${south}:g"   \
+  > ${Eta_ucl}/CTLTEMPLATE_3D
+#
+cat ${Eta_ucl}/CTLTEMPLATE_2D3D_temp  | sed "s:ptx:$imout1:g"       \
+                                      | sed "s:pty:$jmout1:g"       \
+                                      | sed "s:lonoeste:${west1}:g" \
+                                      | sed "s:latsul:${south}:g"   \
+  > ${Eta_ucl}/CTLTEMPLATE_2D3D
+#
+cat ${Eta_ucl}/CTLTEMPLATE_FIXED_temp | sed "s:ptx:$imout1:g"       \
+                                      | sed "s:pty:$jmout1:g"       \
+                                      | sed "s:lonoeste:${west1}:g" \
+                                      | sed "s:latsul:${south}:g"   \
+  > ${Eta_ucl}/CTLTEMPLATE_FIXED
+#
+cat ${Eta_ucl}/cntrl.parm_NOPACK_temp | sed "s:ptx:$imout1:g"       \
+                                      | sed "s:pty:$jmout1:g"       \
+                                      | sed "s:reseta:${res}:g"     \
+                                      | sed "s:lonoeste:${west2}:g" \
+                                      | sed "s:latsul:${south}:g"   \
+  > ${Eta_ucl}/cntrl.parm_NOPACK

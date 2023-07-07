@@ -1,0 +1,72 @@
+dset ^NARQ%f3
+index ^NARQ.idx
+undef 9.999E+20
+title latlon
+options template
+*  produced by grib2ctl v0.9.12.5p32l
+dtype grib 255
+ydef NNY linear SB DDY
+xdef NNX linear WB DDX
+tdef NTIME linear ICN INTHR
+zdef 20 levels
+1000 950 925 900 850 800 750 700 650 600 550 500 450 400 350 300 250 200 150 100 
+vars 58
+ACPCPsfc  0 63,1, 0  ** surface Convective precipitation [kg/m^2]
+APCPsfc  0 61,1, 0  ** surface Total precipitation [kg/m^2]
+CAPEsfc  0 157,1, 0  ** surface Convective Avail. Pot. Energy [J/kg]
+CDsfc  0 252,1, 0  ** surface Drag coefficient [non-dim]
+CINsfc  0 156,1, 0  ** surface Convective inhibition [J/kg]
+DLWRFsfc  0 205,1, 0  ** surface Downward long wave flux [W/m^2]
+DPT2m  0 17,105,2 ** 2 m Dew point temp. [K]
+DSWRFsfc  0 204,1, 0  ** surface Downward short wave flux [W/m^2]
+GFLUXsfc  0 155,1, 0  ** surface Ground heat flux [W/m^2]
+HCDChcl  0 75,234,0 ** high cloud level High level cloud cover [%]
+HGTsfc  0 7,1, 0  ** surface Geopotential height [gpm]
+HGTprs 20 7,100,0 ** Geopotential height [gpm]
+LANDsfc  0 81,1, 0  ** surface Land cover (land=1;sea=0) [fraction]
+LCDClcl  0 73,214,0 ** low cloud level Low level cloud cover [%]
+LFTXplr  0 131,101,12900  ** Surface lifted index [K]
+LHTFLsfc  0 121,1, 0  ** surface Latent heat flux [W/m^2]
+MCDCmcl  0 74,224,0 ** mid-cloud level Mid level cloud cover [%]
+MSLETmsl  0 130,102,0  ** Mean sea level pressure (ETA model) [Pa]
+MSTAVdlr  0 207,112,100  ** Moisture availability [%]
+POTprs 20 13,100,0 ** Potential temp. [K]
+PRESsfc  0 1,1, 0  ** surface Pressure [Pa]
+PRESclb  0 1,2,0  ** Pressure [Pa]
+PRESclt  0 1,3,0  ** Pressure [Pa]
+PWATclm  0 54,200,0 ** atmos column Precipitable water [kg/m^2]
+RHprs 20 52,100,0 ** Relative humidity [%]
+SFCRsfc  0 83,1, 0  ** surface Surface roughness [m]
+SFEXCsfc  0 208,1, 0  ** surface Exchange coefficient [(kg/m^3)(m/s)]
+SHTFLsfc  0 122,1, 0  ** surface Sensible heat flux [W/m^2]
+SOILMdlr  0 86,112,200  ** Soil moisture content [kg/m^2]
+SOILWSoilT  0 144,112,10 ** 0-10cm undergnd Volumetric soil moisture [fraction]
+SOILWdlr 3 144,112,0 ** Volumetric soil moisture [fraction]
+SOTYPsfc  0 224,1, 0  ** surface Soil type (Zobler) [0..9]
+SPFHsfc  0 51,1, 0  ** surface Specific humidity [kg/kg]
+SPFHprs 20 51,100,0 ** Specific humidity [kg/kg]
+SPFH2m  0 51,105,2 ** 2 m Specific humidity [kg/kg]
+SPFH10m  0 51,105,10 ** 10 m Specific humidity [kg/kg]
+SSRUNsfc  0 235,1, 0  ** surface Storm surface runoff [kg/m^2]
+TCDCclm  0 71,200,0 ** atmos column Total cloud cover [%]
+TMPsfc  0 11,1, 0  ** surface Temp. [K]
+TMPprs 20 11,100,0 ** Temp. [K]
+TMP2m  0 11,105,2 ** 2 m Temp. [K]
+TSOILSoilB  0 85,111,300 ** Soil temp. [K]
+TSOILSoilT  0 85,112,10 ** 0-10cm undergnd Soil temp. [K]
+TSOILdlr 3 85,112,0 ** Soil temp. [K]
+UFLXsfc  0 124,1, 0  ** surface Zonal momentum flux [N/m^2]
+UGRDprs 20 33,100,0 ** u wind [m/s]
+UGRD10m  0 33,105,10 ** 10 m u wind [m/s]
+ULWRFsfc  0 212,1, 0  ** surface Upward long wave flux [W/m^2]
+ULWRFtoa  0 212,8,0 ** top of atmos Upward long wave flux [W/m^2]
+USWRFsfc  0 211,1, 0  ** surface Upward short wave flux [W/m^2]
+USWRFtoa  0 211,8,0 ** top of atmos Upward short wave flux [W/m^2]
+VEGsfc  0 87,1, 0  ** surface Vegetation [%]
+VFLXsfc  0 125,1, 0  ** surface Meridional momentum flux [N/m^2]
+VGRDprs 20 34,100,0 ** v wind [m/s]
+VGRD10m  0 34,105,10 ** 10 m v wind [m/s]
+VGTYPsfc  0 225,1, 0  ** surface Vegetation type (as in SiB) [0..13]
+VVELprs 20 39,100,0 ** Pressure vertical velocity [Pa/s]
+WEASDsfc  0 65,1, 0  ** surface Accum. snow [kg/m^2]
+ENDVARS

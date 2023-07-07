@@ -1,0 +1,6 @@
+
+FC         = f90         
+FFLAGS     = -O2 +Odataprefetch
+CFLAGS     = -O     
+CDF_INC    =     
+CDF_LIB    =     

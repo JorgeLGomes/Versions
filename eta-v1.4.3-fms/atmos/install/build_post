@@ -1,0 +1,44 @@
+#!/bin/bash -x
+
+cd ${DIRINSTALL}
+echo "Compiling ../src/post/quilt"
+cd ../src/post/quilt/
+make clean
+make
+
+echo "Compiling ../src/post/post_new"
+cd ../post_new
+make clean
+make
+
+echo "Compiling ../src/post/copygb"
+cd ../copygb
+make clean
+make
+
+echo "Compiling ../src/post/post0"
+cd ../post0
+make clean
+make
+
+echo "Compiling ../src/post/sndp"
+cd ../sndp
+make clean
+make
+
+echo "Compiling ../src/post/staids"
+cd ../staids
+make clean
+make
+
+echo "Compiling ../src/post/profile"
+cd ../profile
+make clean
+make
+
+pwd
+echo "Compiling ../src/post/latlon2ll"
+cd ../latlon2ll
+make clean
+make
+

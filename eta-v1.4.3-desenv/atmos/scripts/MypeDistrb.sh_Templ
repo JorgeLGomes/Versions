@@ -1,0 +1,63 @@
+#!/bin/bash 
+
+IM=imin
+JM=jmin
+inpes=inpesin
+jnpes=jnpesin
+mype=0
+let inpesm1=$inpes-1
+Linpes=${inpesm1}
+Total=`expr "$inpes * $jnpes"|bc -l`
+LastLineMype=`expr "${Total} - 1"|bc -l`
+FirstLineMype=`expr "${LastLineMype} - $inpesm1"|bc -l`
+int=1
+
+while ((${FirstLineMype}>=0)) ; do
+for i in $( seq ${FirstLineMype} ${int} ${LastLineMype} ); do printf "%03d\t" "$i";done; printf "\n"
+ let LastLineMype=${FirstLineMype}-1
+ let FirstLineMype=${FirstLineMype}-${inpes}
+done
+printf "\n"
+exit
+JTAIL=`expr "${jnpes} * ( $JM % ${jnpes})"|bc -l`
+echo ${JTAIL}
+ITAIL=`expr "${inpes} * ( $IM % ${inpes})"|bc -l`
+echo ${ITAIL}
+
+exit
+
+    IPE = 0
+    MY_JS_CALC = 1
+    JNCHUNKS = 0
+!
+    DO J=1,JNPES
+        JCHUNK_CALC = JCHUNK
+!
+        IF (J <= JTAIL) JCHUNK_CALC = JCHUNK + 1
+        JNCHUNKS   = JNCHUNKS + JCHUNK_CALC
+        MY_JE_CALC = JNCHUNKS
+        MY_IS_CALC = 1
+        NCHUNKS    = 0
+!
+        DO I=1,INPES
+            ICHUNK_CALC = ICHUNK
+!
+            IF (I <= ITAIL) ICHUNK_CALC = ICHUNK + 1
+            NCHUNKS    = NCHUNKS + ICHUNK_CALC
+            MY_IE_CALC = NCHUNKS
+!
+            IF (MYPE == IPE) THEN
+                MY_IS_GLB = MY_IS_CALC
+                MY_IE_GLB = MY_IE_CALC
+                MY_JS_GLB = MY_JS_CALC
+                MY_JE_GLB = MY_JE_CALC
+            END IF
+!
+            MY_IS_CALC = MY_IE_CALC + 1
+           IPE = IPE + 1
+ !
+        END DO
+!
+        MY_JS_CALC = MY_JE_CALC + 1
+!
+    END DO

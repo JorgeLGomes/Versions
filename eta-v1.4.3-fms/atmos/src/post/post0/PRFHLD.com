@@ -1,0 +1,2 @@
+      COMMON /PRFHLD/
+     & TLMIN(IM,JM),TLMAX(IM,JM)

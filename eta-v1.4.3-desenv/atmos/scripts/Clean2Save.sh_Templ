@@ -1,0 +1,26 @@
+#!/bin/bash  -x
+##########################
+# VARIAVEIS
+##########################
+date
+#
+cd ${Eta_run}
+mkdir  ${Eta_run}/save
+cp  ${Eta_run}/CNST.file                     ${Eta_run}/save/.
+cp  ${Eta_run}/INIT.file                     ${Eta_run}/save/.
+cp  ${Eta_run}/BNDY.file                     ${Eta_run}/save/.
+cp  ${Eta_run}/ZEFF                          ${Eta_run}/save/.
+cp  ${Eta_run}/sst2_EGRD_${Run_Date}.bin     ${Eta_run}/save/.
+cp  ${Eta_run}/NSSTFLDS.txt                  ${Eta_run}/save/.
+rm -f *
+cp  ${Eta_run}/save/CNST.file                 ${Eta_run}/.
+cp  ${Eta_run}/save/INIT.file                 ${Eta_run}/.
+cp  ${Eta_run}/save/BNDY.file                 ${Eta_run}/.
+cp  ${Eta_run}/save/ZEFF                      ${Eta_run}/.
+cp  ${Eta_run}/save/sst2_EGRD_${Run_Date}.bin ${Eta_run}/.
+cp  ${Eta_run}/save/NSSTFLDS.txt              ${Eta_run}/.
+
+rm -Rf ${Eta_run}/outjob
+rm -Rf ${Eta_run}/netcdf_temp
+rm -Rf ${Eta_run}/OUT2RESTRT
+rm -Rf  ${Eta_run}/save

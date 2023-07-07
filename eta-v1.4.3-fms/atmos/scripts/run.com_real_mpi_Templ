@@ -1,0 +1,66 @@
+#!/bin/bash 
+# PbsSlurm
+##########################
+# VARIAVEIS 
+##########################
+MdlStrt=`date`
+#
+cd ${Eta_run}
+#
+export TMMARK=t00s
+export MPIPROGINF=ALL_DETAIL
+export MPICOMMINF=ALL
+export MPIMULTITASKMIX=ON
+export SERVER_GROUPS=${npio_server_groups}
+let npr=${npr}+${SERVER_GROUPS}+${npio_server}
+#
+head=fort.
+#
+if [ ${restrt} == COLD ] ; then #if not restrt
+    rm -f ${Eta_run}/EGRD* ${Eta_run}/RESTRT* ${Eta_run}/FCSTDONE*
+    cp ${Eta_ucl}/${cuparm}                      \
+       ${Eta_run}/CUPARMDATA.dat
+#    
+    cp ${Eta_ucl}/soil_veg_namelist_ver_2.1      \
+       ${Eta_run}/SOIL_VEG_NAMELIST_VER_2.1
+#
+    cp ${Eta_fix}/eta_micro_lookup.dat           \
+       ${Eta_run}/ETA_MICRO_LOOKUP.dat
+#
+    cp ${Eta_ucl}/namelist_filename.txt          \
+       ${Eta_run}//NAMELIST_FILENAME.txt
+#
+    ln -sf ${Eta_run}/INIT.file                  \
+           ${Eta_run}/fort.13
+#
+else # if restrt
+    fcst2restrt=`printf "%06d" "${fcst2restrt}"`
+    ln -sf ${Eta_run}/RESTRT${fcst2restrt}.t00s  \
+           ${Eta_run}/fort.13
+fi
+#
+    ln -sf ${Eta_run}/NSSTFLDS.txt               \
+           ${Eta_run}/fort.53
+#
+    ln -sf ${Eta_run}/sst2_EGRD_${Run_Date}.bin  \
+           ${Eta_run}/fort.90
+#
+Model_exe=${Eta_exe}/${Fctexec}
+# 
+if [ ${npr} -le 2 ] ; then   
+    ${Model_exe}
+else
+    echo "Starting Eta Forecast!"	
+    ExecCmdNPF ${Model_exe//[[:space:]]} > ${Eta_run}/saida_Eta${Res} 
+#    mpirun -np ${npr} --oversubscribe  ${Model_exe//[[:space:]]} > ${Eta_run}/saida_Eta${Res} 
+fi
+#
+err=$?
+if [ $err -ne 0 ] ; then
+    echo "FALHA NA EXECUCAO DO MODELO!!!!"
+    echo "VERIFICAR O ARQUIVO ${Model_exe//[[:space:]]}"
+ exit 1
+fi
+MdlEnd=`date`
+echo "Model start: "${MdlStrt}
+echo "  Model End: "${MdlEnd}

@@ -1,0 +1,459 @@
+      subroutine conv2model(gribfile,outdir)
+      use estab
+      use constants
+      implicit none
+      character(len=255),intent(in)   :: gribfile
+      character(len=255),intent(in)   :: outdir
+!_____________________________________________________________________________________________________________
+      integer                         :: nx,ny,nz
+      integer                         :: dx,dy 
+      integer                         :: proj,LatS,LonW,LatN,LonE
+      integer                         :: i,j,k,l,n,it,nsfcfld,id
+      integer                         :: n1,n2,n3,ng,LenStr
+      real                            :: xe,mrsat,G,Rd,CTv,tv2,tv1,tvb,dz
+      integer, dimension(200)         :: kgds
+      integer, dimension(:,:)   ,allocatable    :: lsfc
+      real,    dimension(:,:,:) ,allocatable    :: ht                        !Isobaric heights (m)
+      real,    dimension(:,:,:) ,allocatable    :: tp                        !Isobaric temps (K)
+      real,    dimension(:,:,:) ,allocatable    :: th                        !Isobaric theta (K)
+      real,    dimension(:,:,:) ,allocatable    :: uw                        !Isobaric u-wind (m/s)
+      real,    dimension(:,:,:) ,allocatable    :: vw                        !Isobaric v-wind (m/s)
+      real,    dimension(:,:,:) ,allocatable    :: rh                        !Isobaric rh,mr (%,kg/kg)
+      real,    dimension(:)     ,allocatable    :: pr,pri                    !Isobaric pressures (mb)
+      parameter (G=9.80665, Rd=287.05, CTv=0.608)
+!_____________________________________________________________________________________________________________
+      real,    dimension(:,:,:) ,allocatable    :: slp
+								   !slp(i,j,1)=LCMSK;slp(i,j,2)=PSLM
+								   !slp(i,j,3)=PSFC;slp(i,j,4)=ZSFC
+								   !slp(i,j,5 & 6) are 0-10 cm STC and SMC
+								   !slp(i,j,7 & 8) are 10-200 cm STC and SMC
+!_____________________________________________________________________________________________________________
+      real,    dimension(:,:)   ,allocatable    :: dummy 
+!_____________________________________________________________________________________________________________
+      character(len=255)              :: outfile,outfile2,gdsfile
+      character(len=15)               :: ModelDriver
+      character(len=20)               :: atime
+      character(len=8)                :: atime_r
+      character(len=7)                :: model,model2
+      character(len=8)               :: timex
+!_____________________________________________________________________________________________________________
+      n=index(outdir,' ')-1
+      open(1,file=outdir(1:n)//'/InputModelInf.txt',form='formatted',status='old')
+      rewind 1
+      read(1,'(a15)')ModelDriver
+      read(1,*)nx,ny,nz
+      read(1,*)proj
+      read(1,*)LatS
+      read(1,*)LonW
+      read(1,*)LatN
+      read(1,*)LonE
+      read(1,*)dx
+      read(1,*)dy
+
+      allocate(ht(nx,ny,nz))
+      allocate(tp(nx,ny,nz))                       
+      allocate(th(nx,ny,nz))                     
+      allocate(uw(nx,ny,nz))                 
+      allocate(vw(nx,ny,nz))                
+      allocate(rh(nx,ny,nz))
+      allocate(lsfc(nx,ny))
+      allocate(slp(nx,ny,14)) 
+      allocate(dummy(nx,ny))  
+      allocate(pr(nz))
+      allocate(pri(nz)) 
+ 
+      do k=1,nz
+        read(1,*)pr(k)
+      enddo
+      close(1)
+!
+
+! *** Fill pressure levels.
+!
+!mp      nsfcfld will be 12 although 4 of these are set to missing for...
+      nsfcfld=12
+!mp
+	write(6,*) 'using hardwired stuff! ', nx,ny,nz
+        write(6,*) (pr(k),k=1,nz)
+
+! *** Read in degrib data.
+!
+!       atime_r='05070400000'
+        n=index(outdir,' ')-1
+        n2=index(ModelDriver,' ')-1
+        write(6,*)n2
+        write(6,*)ModelDriver(1:n2)
+        
+	n=index(outdir,' ')-1
+        open(12,file=outdir(1:n)//'/adate.txt')
+!        open(12,file='./adate.txt')
+        read(12,*) atime_r
+        close(12)
+        n2=index(gribfile,' ')-1
+        n1=index(gribfile,'.')+1
+        n3=n2-n1+1
+        LenStr=n3+8
+        timex(1:n3)=gribfile(n1:n2)
+        write(6,*)n1,n2,LenStr,timex
+        atime(1:LenStr)=atime_r//timex(1:n3)
+        print *, 'ATIME =',ATIME
+
+      n=index(gribfile,' ')-1
+       write(*,*) 'OPEN FILE ',gribfile(1:n)
+       open(12,file=gribfile(1:n),form='unformatted', convert='big_endian')
+ 
+!      do l=1,12
+      read(12) ((slp(i,j,4),i=1,nx),j=1,ny)
+!      enddo
+      read(12) ((slp(i,j,1),i=1,nx),j=1,ny)
+      read(12) ((slp(i,j,3),i=1,nx),j=1,ny)
+  
+      do l=1,nz
+      read(12) ((uw(i,j,l),i=1,nx),j=1,ny)
+      enddo
+      do l=1,nz
+      read(12) ((vw(i,j,l),i=1,nx),j=1,ny)
+      enddo
+      do l=1,nz
+      read(12) ((ht(i,j,l),i=1,nx),j=1,ny)
+      enddo
+
+      read(12) ((slp(i,j,2),i=1,nx),j=1,ny)
+
+      do l=1,nz
+      read(12) ((tp(i,j,l),i=1,nx),j=1,ny)
+      enddo
+      do l=1,nz
+      read(12) ((dummy(i,j),i=1,nx),j=1,ny) !chou skip relative humidity
+      enddo
+      do l=1,nz-5      
+!Chou      do l=1,nz
+      read(12) ((rh(i,j,l),i=1,nx),j=1,ny)
+      enddo
+
+      do l=1,5
+      read(12) ((dummy(i,j),i=1,nx),j=1,ny)
+      enddo
+
+!chou      do l=1,nz
+!chou      read(12) ((dummy(i,j),i=1,nx),j=1,ny)
+!chou      enddo
+
+      read(12) ((slp(i,j,5),i=1,nx),j=1,ny)
+      read(12) ((slp(i,j,11),i=1,nx),j=1,ny)
+      read(12) ((slp(i,j,6),i=1,nx),j=1,ny)
+      read(12) ((slp(i,j,12),i=1,nx),j=1,ny)
+
+!GSMLeitura SI e SICE      
+
+      read(12) ((slp(i,j,13),i=1,nx),j=1,ny)     !! Included SI     
+      read(12) ((slp(i,j,14),i=1,nx),j=1,ny)     !! Included SICE    
+
+
+      slp(:,:,7)=slp(:,:,5)
+      slp(:,:,8)=slp(:,:,6)
+      slp(:,:,9)=slp(:,:,11)    
+      slp(:,:,10)=slp(:,:,12)
+      
+
+      close(12)
+
+      do i=1,nx
+      do j=1,ny
+      
+        if (slp(i,j,1)<0.1) then
+          slp(i,j,1)=0
+        else
+          slp(i,j,1)=1    
+        endif        
+      enddo
+      enddo 
+      do i=1,nx
+      do j=ny,1,-1
+
+      do l=1,nz
+      if (ht(i,j,l).eq.9.9990003E+20) ht(i,j,l)=-99999.
+      if (uw(i,j,l).eq.9.9990003E+20) uw(i,j,l)=-99999.
+      if (vw(i,j,l).eq.9.9990003E+20) vw(i,j,l)=-99999.
+      if (tp(i,j,l).eq.9.9990003E+20) tp(i,j,l)=-99999.
+      if (rh(i,j,l).eq.9.9990003E+20) rh(i,j,l)=-99999.
+      enddo
+
+      do l=1,14
+      if (slp(i,j,l).eq.9.9990003E+20) slp(i,j,l)=-99999
+      if (slp(i,j,13).eq.-99999) slp(i,j,13)=0.    !! Included SI
+      if (slp(i,j,14).eq.-99999) slp(i,j,14)=0.    !! Included SICE
+      enddo
+
+      enddo
+      enddo
+      
+      slp(:,:,1)=-99999.
+
+!
+! *** Check for any missing data.
+!
+      do k=1,nz
+	  if (ht(1,1,k) .eq. -99999.) then
+	     print *,'Height data missing at level: ',pr(k)
+!GSM	     stop
+	  elseif (tp(1,1,k) .eq. -99999.) then
+	     print *,'Temperature data missing at level: ',pr(k)
+!GSM	     stop
+	  elseif (rh(1,1,k) .eq. -99999.) then
+	     print *,'RH data missing at level: ',pr(k)
+	     print *,'Calling RH patch.'
+	     call rh_fix(nx,ny,nz,rh,pr)
+	  elseif (uw(1,1,k) .eq. -99999.) then
+	     print *,'U-wind data missing at level: ',pr(k)
+!GSM	     stop
+	  elseif (vw(1,1,k) .eq. -99999.) then
+	     print *,'V-wind data missing at level: ',pr(k)
+!GSM	     stop
+	  endif
+      enddo
+
+!mp
+!mp     Handle missing surface data....
+!mp
+
+!
+!      Just bogus to hold a place.
+!
+	write(6,*) 'going to use nsfcfld= ', nsfcfld
+
+!	If rean put bogus data into slp
+
+	do k=5,nsfcfld
+
+	if (slp(1,1,k) .eq. -99999.) then
+ 	write(6,*) 'SURFACE DATA MISSING... ', K       
+	if (k.eq.9.or.k.eq.11) then
+	 write(6,*) 'filling soil temp data...'
+	 do j=1,ny
+	 do i=1,nx
+	slp(i,j,k)=slp(i,j,7)
+	 enddo
+	 enddo
+
+      elseif(k.eq.10.or.k.eq.12.) then
+
+	write(6,*) 'filling soil moisture data...'
+
+	do j=1,ny
+	do i=1,nx
+	 slp(i,j,k)=slp(i,j,8)
+	enddo
+	enddo
+      endif
+      endif
+!mp
+	if (mod(k,2) .eq. 0) then
+	do j=1,ny
+	do i=1,nx
+	if (slp(i,j,k) .eq. 0) then
+	slp(i,j,k)=0.14
+	endif
+	enddo
+	enddo
+
+	else
+
+	do j=1,ny
+        do i=1,nx
+        if (slp(i,j,k) .eq. 0) then
+        slp(i,j,k)=273.15
+        endif
+        enddo
+        enddo
+
+	endif
+!mp
+	enddo
+
+!
+! *** Convert 3d temp to theta.
+! *** Compute Exner function.
+! *** Convert 3d rh to mr.
+!
+      do k=1,nz
+	 pri(k)=1./pr(k)
+      enddo
+!
+      do k=1,nz
+      do j=1,ny
+      do i=1,nx
+	 th(i,j,k)=tp(i,j,k)*(1000.*pri(k))**kappa
+!	 ex(i,j,k)=cp*tp(i,j,k)/th(i,j,k)
+	 it=tp(i,j,k)*100
+	 it=min(45000,max(15000,it))
+	 xe=esat(it)
+	 mrsat=0.00622*xe/(pr(k)-xe)
+!Chou	 rh(i,j,k)=rh(i,j,k)*mrsat    !specific humidity read in from file unit 12
+      enddo
+      enddo
+      enddo
+
+!Chou recalculating ht from another hydrostatic eq
+!
+      do j=1,ny
+      do i=1,nx 
+        lsfc(i,j)=1
+       do l=1,nz
+         if( slp(i,j,3).lt.(pr(l)*100.)) lsfc(i,j)=l ! lvl imediately below psfc
+       enddo
+      enddo
+      enddo
+
+      do j=1,ny
+      do i=1,nx
+        k=lsfc(i,j)
+!        ht(i,j,k)=slp(i,j,4)+(Rd*tp(i,j,k+1)/g)*alog(slp(i,j,3)/pr(k))
+        Tv2= tp(i,j,k+1)*(1.0+CTv*rh(i,j,k+1))
+       do l=k+1, nz
+         Tv1=Tv2
+         Tv2= tp(i,j,l) *(1.0+CTv*rh(i,j,l))
+         TvB= (Tv1+Tv2)*0.5
+         dz=(Rd*TvB/G)*alog(pr(l-1)/pr(l))
+!         ht(i,j,l)=ht(i,j,l-1)+dz
+       enddo
+       enddo
+       enddo
+
+! Calculate geopotential height below ground
+      do j=1,ny
+      do i=1,nx
+      k=lsfc(i,j)
+      DO l=k-1,1,-1
+         Tv1= tp(i,j,l)  *(1.0+CTv*rh(i,j,l))
+         Tv2= tp(i,j,l+1)  *(1.0+CTv*rh(i,j,l+1))
+         tvb=(tv1+tv2)*0.5
+         dz=(Rd*TvB/G)*alog(pr(l+1)/pr(l))
+!         ht(i,j,l)=ht(i,j,l+1)+dz
+       enddo
+       enddo
+       enddo
+
+       do k=1,nz
+       do j=1,ny
+       do i=1,nx
+       if (tp(i,j,k).lt.1.0) print*,'tp:',i,j,k,tp(i,j,k)
+       enddo
+       enddo
+       enddo
+
+!
+!
+! *** Create output file name.
+!
+      n=index(outdir,' ')-1
+
+      model='ETAwrk'
+      model2='ETAwrk2'
+      
+      outfile=outdir(1:n)//'/'//atime(1:LenStr)//'.'//model
+      outfile2=outdir(1:n)//'/'//atime(1:LenStr)//'.'//model2
+      
+      n=index(outfile,' ')-1
+      ng=index(outfile2,' ')-1
+      
+      print*,"niveis",nz
+      print *,model,' data ---> ',outfile(1:n)
+      print *,model2,' data ---> ',outfile2(1:ng)
+      open(1,file=outfile(1:n),status='unknown',form='unformatted')
+      open(3,file=outfile2(1:ng),status='unknown',form='unformatted',access='sequential')
+!
+!mp      nsfcfld will be 12 although 4 of these are set to missing for AVN...
+      nsfcfld=12
+	write(1) nz
+
+! new stuff for GDS file
+!
+        n=index(gribfile,' ')-1
+        write(6,*) 'calling get_fullgds with ',gribfile(1:n)
+!
+        kgds(1)=proj
+        kgds(2)=nx
+        kgds(3)=ny
+        kgds(4)=LatS
+        kgds(5)=LonW
+        kgds(6)=128
+        kgds(7)=LatN
+        kgds(8)=LonE
+        kgds(9)=dx
+        kgds(10)=dy
+        kgds(11)=64
+        kgds(20)=255
+
+        write(6,*) 'back from get_fullgds'
+
+
+        n=index(outdir,' ')-1
+        gdsfile=outdir(1:n)//'/'//'gdsinfo.'//model
+
+        n=index(gdsfile,' ')-1
+        write(6,*) 'GDS written to ', gdsfile(1:n)
+        open(unit=14,file=gdsfile(1:n),form='unformatted',access='sequential')
+
+!
+!	MODIFY GDS TO REFLECT FLIPPING OF DATA IN N-S SENSE
+!
+
+	kgds(4)= -kgds(4)
+	kgds(7)= -kgds(7)
+        write(6,*) 'writing kgds ', (kgds(I),i=1,14)
+        write(14) kgds
+
+        close(14)
+	write(6,*) 'past 14 close'
+!
+! end new stuff
+
+!
+! *** Write isobaric upper air data.
+!
+	write(6,*) 'starting writes to unit1'
+
+      write(1) uw
+      write(1) vw
+      write(1) ht
+      write(1) rh
+      write(1) tp
+      write(1) pr
+      write(1) slp
+      
+      do k=1,nz
+	write(3) ((uw(i,j,k),i=1,nx),j=1,ny) 
+	enddo
+	do k=1,nz
+	write(3) ((vw(i,j,k),i=1,nx),j=1,ny) 
+	enddo
+	do k=1,nz
+	write(3) ((ht(i,j,k),i=1,nx),j=1,ny) 
+	enddo
+	do k=1,nz
+	write(3) ((rh(i,j,k),i=1,nx),j=1,ny) 
+	enddo
+	do k=1,nz
+        write(3) ((tp(i,j,k),i=1,nx),j=1,ny)
+        enddo
+	do k=1,14
+	write(3) ((slp(i,j,k),i=1,nx),j=1,ny) 
+      enddo
+!mp
+	write(6,*) 'writing these sfc values to the ',model,' file...'
+!GSM	do k=1,nsfcfld
+	do k=1,14
+	write(6,*) 'field, value ', k, slp(nx/2,ny/2,k)
+	enddo
+!GSM	do k=1,nsfcfld
+	do k=1,14
+	write(6,*) 'field, value ', k, slp(3*nx/4,3*ny/4,k)
+	enddo
+
+!
+      close(1)
+!
+      return
+      end
+!

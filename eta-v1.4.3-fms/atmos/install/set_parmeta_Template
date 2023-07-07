@@ -1,0 +1,981 @@
+#!/bin/bash 
+###########################################################################################################
+## Primary grid dimensions
+##
+## Note:  LM must be
+## 38, 45, 50, or 60 (when running Eta coordinates)
+## 25, 30, 38, or 45 (when running sigma coordinates)
+##
+## Note:  JM MUST be odd!
+###########################################################################################################
+
+confin=$1
+Machine=$2
+
+source  ${DIRMODEL}/machines/${Machine}/Define_Environment
+###########################################################################################################
+Lon=-50.0                    # Longitude do ponto central
+Lat=-19                    # Latitude do ponto central
+IM=119                        # Numero de pontos em x. Deve ser sempre impar.
+JM=249                       # Numero de pontos em y. Deve sempre ser impar.
+			 #   Obs.: Para que seu dominio tenha um formato quadrado, o numero de
+			 #	   pontos em x deve ser essencialmente a metade do numero de pontos em
+			 #	   y devido a configuracao dos pontos de massa e de vento na grade E
+			 #	   horizontal (Ex.: IM=50 e JM=99)
+LM=38                       # Numero de niveis verticais (ex. LM=38, 50, 60. Resolucao vertical)
+LSM=22                       # Numero de niveis de pos-processamento. Niveis de saida para dados em niveis
+			 # isobaricos (LSM=20,50)
+# *Os parametros acima so podem ser alterados antes da compilacao do modelo.
+#  Qualquer mudanca nos parametros acima, o modelo devera ser compilado novamente.
+###########################################################################################################
+Res=40                       # Resolucao horizontal do modelo em km (res=2, 5, 8, 15, 20, 40)
+npio_server=1                # Numero de processadores para I/O
+npio_server_groups=1         # Numero de comunicadores MPI
+###########################################################################################################
+Fct=6                        # Tempo de previsao em horas. Recomenda-se rodar primeiro apenas 6 horas 
+                             # (Fct=6) para verificar se a configuracao esta adequada, se esta cobrindo 
+			     # a area desejada, se conseguiu ler as condicoes iniciais e de contorno, etc.
+Fctexec=etafcst.x            # nome do arquivo executavel do modelo: por ex. etafcst.x (tempo e sazonal), 
+                             # etafcst_kf.x (tempo), etafcst_kfmx.x (tempo), etafcst_zhao.x (
+			     # sazonal e mudanças climaticas)
+Exp=C00                      # Label do experimento. Rotulo adicionado ao nome do arquivo de saida para 
+                             # identificar um experimento (ex.: C00, C01, Cntrl, etc). Esse identificador 
+			     # varia quando se constroi os membros do conjunto de uma previsao.
+TypRun=simulation            # Define se a rodada e uma simulacao ou uma previsao (simulation ou forecast). 
+                             # Denomina-se simulacao quando se utiliza dados de analise nas condicoes 
+			     # de contorno.
+IntFct=1                     # Frequencia de saida em horas das variaveis 2D, se Split2D3D=".True." ou 
+                             # das variaveis 2D 2 3D se Split2D3D=".False." (ex.: IntFct=1) 
+IntFct3D=1                   # Frequencia de saida em horas das variaveis 3D (ex.: IntFct=6). 
+                             # Se diferente de InitFct, a atribuicao da variavel Split2D3D deve ser,
+			     # no arquivo de configuracao .True.
+			     # 
+IntPhisAcum=${IntFct}        # Frequencia em horas de acumulo de quantidades como chuva, Tmax e Tmin, 
+                             # fluxos de energia (calor latente, onda curta incidente, etc. 
+			     # (por ex. IntPhisAcum=1 ou  IntPhisAcum=6 ). 
+			     # Recomenda-se utilizar a mesma frequencia de InitFct.
+###########################################################################################################
+CInit=ERA5                   # Tipo de condicao inicial (cpteta15,cpteta40,gfs2gr0.25,cfs,cfsr,BAM,BESM)
+BCond=ERA5                   # Tipo de condicao de contorno (cpteta15,cpteta40,gfs2gr0.25,cfs,cfsr,BAM,BESM)
+InitBC=6                     # Frequencia de atualizacao das bordas (ex.: InitBC=6)
+TInitBC=1                    # Utiliza nas condicoes de contorno lateral uma previsao do mesmo horario da 
+                             # rodada (TlnitBC=1) ou utiliza uma previsao iniciada 12h ou 6h 
+			     # antes (TlnitBC=0).
+HInitBC=12                   # Caso TInitBC=0 a variavel HInitBC define qual rodada sera usada nas 
+                             # condicoes de contorno
+###########################################################################################################
+topo=${topo}                 # Define qual o mapa de topografia sera utilizado (90m, 1km)
+slope=.true.                 # ".true." utiliza a coordenada verical refinada com ´cut-cells´. 
+vegflag=${vegflag}           # .true. utiliza o mapa de vegetacao de Sestini et al. (2002).
+sstflg=${sstflg}             # .true. habilita a atualização, diaria, da temperatura da superficie do mar 
+sstmnthly=${sstmnthly}       # .true. utiliza arquivo de temperatura da superficie do mar com valores 
+                             # mensais, geralmente disponibilizada para integracao climatica com o BAM.
+			     # .true. utiliza arquivo de temperatura da superficie do mar com valores
+			     # diarios, geralmente disponibilizada por modelos acoplados (ex.: BESM, CFS) .
+sstres=${sstres}             # Resolucao da temperatura da superficie do mar (NOAA: sstres=0.083)
+co2flg=${co2flg}             # .true. atualiza CO2 durante a simulacao. Utilizado para simulacoes de 
+                             # mudanças climaticas.
+coac=${coac}                 # Valor do parametro de suavizacao dependente da resolucao horizontal
+                             # ex. em 8km: coac=0.6; em 1km, coac=1.0
+lcoac=${lcoac}               # .true. utiliza equacao para calculo do coac
+qtdtypsolo=15                # quantidade de tipos de solo 
+                             # mapa FAO: qtdtypsolo=15; mapa Doyle: qtdtypsolo=9
+soilmoist=.false.            # .true. utiliza a umidade do solo inicial fornecido por um arquivo.
+                             # .false. utiliza a umidade do solo do arquivo da condicao inicial 
+			     # atmosferica. 
+newglobalsoil=.true.         # .true. Utiliza mapa de solo global da FAO
+sstsource=ERA5               # arquivo de origem da SST (ex.: NOAA, BESM, CFS,)
+sstres=0.25_ERA5             # 
+postout=latlonnopack         # formato dos arquivos de saida (por ex. postout=latlonnopack, 
+                             # ou postout=latlon para xxx )
+                             # "latlonnopack" gera arquivos de saida no formato binario,
+                             # interpolados na grade definida no namelist cntrl.parm_NOPACK
+                             # "latlon" gera arquivos grib na grade nativa do modelo (grade E).
+                             # A interpolação para a grade regular e feita pelo programa copygb
+###########################################################################################################
+# Restart
+writeout2restrt=.false.      # true. escreve o arquivo OUT2RESTRT. Em simulacoes longas, por exemplo de 
+                             # 30 anos, e interessante que sejam executadas por partes, sendo interrompidas 
+			     # e reiniciadas do ponto em que foi interrompida. Para reiniciar (restart) é 
+			     # necessario que o estado do modelo seja salvo no arquivo OUT2RESTART.
+freqout2restrt=30  	     # frequencia em DIAS de escrita do arquivo OUT2RESTRT 
+                             # (ex.: a cada 1 mes: freqout2restr=30)
+###########################################################################################################
+# Esquema de conveccao
+cucnvcflg=.true.            # true. ligar o esquema de parametrizacao de convecao. 
+cucnvcsqm=1                 # Define o esquema de conveccao 
+ 	                    # Betts-Miller: cucnvcsqm=1, Kain-Fritsch: cucnvcsqm=2
+########################
+# Esquema de Microfisica
+microphyssqm=1              # Define o esquema de microfisica 
+		            # Ferrier: microphyssqm=1, Zhao: microphyssqm=2)
+########################
+###########################################################################################################
+######################## 
+# Esquema de conveccao rasa
+shlcnvcflg=.false.          # .true. para manter ligado o esquema de conveccao rasa, quando a 
+                            # parametrizacao de conveccao for desligada (cucnvcflg=.false.) 
+			    # ou .false. para desligar.
+shlcnvcsqm=1                # define o esquema de conveccao rasa (Betts-Miller: shlcnvcsqm=1)
+#
+# Note: PT can only be set to 25 or 50 hPa to work properly with
+#	the radiation files included in this package.  
+#
+PT=25                       # Pressão no topo do dominio, preparado para 25 ou 50 hPa.
+#
+########################
+#
+# This is used to link files for use by various programs.  Most machines
+# name the linked files as "fort.#", while HP's use "ftn#", where # is the
+# unit number.
+#
+HVAL="fort."                # Nome identificador dos arquivos escritos pelo programa fortran. A maioria das 
+                            # maquinas nomeia os arquivos vinculados como fort.n. Algumas maquinas da HP 
+			    # usa ftn.n, onde n e o numero da unidade.
+#
+########################
+#
+## These should both be =1 unless using multiple CPUs on a machine
+## using "real" MPI (as opposed to the included dummy MPI library).
+##
+## INPES X JNPES = total number of CPUs to be used
+                            # As variaveis INPES e JNPES devem ser alteradas de forma que a multiplicacao 
+			    # INPES X JNPES define o numero de CPUs a ser utilizado. A grade do modelo e 
+			    # divida em INPES CPUs na direcao ao longo de uma latitude e JNPES e o numero 
+			    # de CPUs na direcao ao longo de uma longitude.  Por exemplo INPES=2, JNPES=4, 
+			    # totalizam 8 CPUs, ou Quando preferir rodar com um unico processador, ambos os 
+			    # parametros devem ser igual a 1 (neste caso sera utilizada a biblioteca 
+			    # dummyMPI).
+			    # Exemplo: 100 processadores
+			    # INJES X JNPES = total de número de processadores
+			    # INPES=5 (numero qualquer, depende da maquina)
+			    # JNPES=20 (numero qualquer, depende da maquina)
+# *Os parametros INPES e JNPES so podem ser alterados antes da compilacao do modelo. Se for necessario 
+# redefinir esses parametros o modelo devera ser compilado novamente.
+##
+INPES=2 
+JNPES=4 
+#
+########################
+#-----------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
+
+#########OPCOES DE UMIDADE DO SOLO############
+prop1=1.0
+prop2=1.0
+prop3=1.0
+prop4=1.0
+##############################################
+
+##############################################
+#
+# Nao requer mudancas abaixo deste ponto
+#
+##############################################
+
+echo " THE MODEL USE S THE SEMI-STAGGERED E GRID IN ARAKAWA NOTATION."
+echo " HORIZONTAL INDEXING IS TWO-DIMENSIONAL."
+echo ""
+echo " H(1,JM)  V(1,JM)  H(2,JM)  V(2,JM) ...... V(IM-1,JM)  H(IM,JM)"
+echo "    .        .        .        .               .          ."
+echo "    .        .        .        .               .          ."
+echo "    .        .        .        .               .          ."
+echo "    .        .        .        .               .          ."
+echo ""
+echo " H(1,3)   V(1,3)   H(2,3)   V(2,3) ....... V(IM-1,3)   H(IM,3)"
+echo ""
+echo " V(1,2)   H(1,2)   V(2,2)   H(2,2) ....... H(IM-1,2)   V(IM,2)"
+echo ""
+echo " H(1,1)   V(1,1)   H(2,1)   V(2,1) ....... V(IM-1,1)   H(IM,1)"
+echo ""
+echo ""
+
+let INPESM1=$INPES-1
+Total=`expr "$INPES * $JNPES"|bc -l`
+LastLineMype=`expr "${Total} - 1"|bc -l`
+FirstLineMype=`expr "${LastLineMype} - $INPESM1"|bc -l`
+int=1
+while ((${FirstLineMype}>=0)) ; do
+for i in $( seq ${FirstLineMype} ${int} ${LastLineMype} ); do printf "%03d\t" "$i";done; printf "\n"
+ let LastLineMype=${FirstLineMype}-1
+ let FirstLineMype=${FirstLineMype}-${INPES}
+done
+printf "\n"
+sleep 4
+
+NCpusNode=${NCpusNode//[[:space:]]}
+let NTProc=${Total}+${npio_server}+${npio_server_groups}
+let NNodes=${NTProc}/${NCpusNode}
+let Teste=${NTProc}%${NCpusNode}
+if ((${Teste}!=0)); then
+  let NNodes=${NNodes}+1
+fi
+###################################################################################################
+#  Create Experiment directory tree 
+###################################################################################################
+if [ -d ${Eta_home_conf} ]; then
+  echo "Directory ${Eta_home_conf} exists"
+  echo "Moved to ${Eta_home_conf}.bak"
+  mv ${Eta_home_conf} ${Eta_home_conf}.bak
+fi
+mkdir -p ${Eta_home_conf}/scripts
+mkdir -p ${Eta_home_conf}/exe
+mkdir -p ${Eta_home_conf}/fix
+mkdir -p ${Eta_run_output}
+mkdir -p ${Eta_output}
+###################################################################################################
+# Copy all experiment stuffs and configure scripts
+###################################################################################################
+ cp ${DIREta}/scripts/Clean2Save.sh_Templ            ${Eta_home_conf}/scripts/Clean2Save.sh_Templ
+ cp ${DIREta}/scripts/def_eta.scr                    ${Eta_home_conf}/scripts/def_eta.scr
+ cp ${DIREta}/scripts/Finaliza_latlon.ksh_Templ      ${Eta_home_conf}/scripts/Finaliza_latlon.ksh_Templ
+ cp ${DIREta}/scripts/Finaliza_latlonnopack.sh_Templ ${Eta_home_conf}/scripts/Finaliza_latlonnopack.sh_Templ
+ cp ${DIREta}/scripts/Gera_NC_netcdf.sh_Templ        ${Eta_home_conf}/scripts/Gera_NC_netcdf.sh_Templ
+ cp ${DIREta}/scripts/get_data.sh_Templ              ${Eta_home_conf}/scripts/get_data.sh_Templ
+ cp ${DIREta}/scripts/get_sst_data.sh_Templ          ${Eta_home_conf}/scripts/get_sst_data.sh_Templ
+
+#
+ cat ${DIREta}/scripts/Eta_fix.sh_Templ                                                                \
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                                                   \
+               > ${Eta_home_conf}/scripts/Eta_fix.sh_Templ
+#
+ cat ${DIREta}/scripts/Eta_sst.sh_Templ                                                                \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_Eta_sst.sh"         \
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                                                   \
+               > ${Eta_home_conf}/scripts/Eta_sst.sh_Templ
+#
+ cat ${DIREta}/scripts/main.sh_Templ                                                                   \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_main.sh"            \
+               > ${Eta_home_conf}/scripts/main.sh_Templ
+#
+ cat ${DIREta}/scripts/new_prep.sh_Templ                                                               \
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                                                   \
+               > ${Eta_home_conf}/scripts/new_prep.sh_Templ
+#
+ cat ${DIREta}/scripts/outjob_special_Templ                                                            \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_outjob_special"     \
+               | sed -e "s:ExecCmdNPP:${ExecCmdNPP}:g"                                                 \
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                                                   \
+               > ${Eta_home_conf}/scripts/outjob_special_Templ
+#
+ cat ${DIREta}/scripts/outjob_special.sh_Templ                                                         \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_outjob_special.sh"  \
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                                                   \
+               > ${Eta_home_conf}/scripts/outjob_special.sh_Templ
+#
+ cat ${DIREta}/scripts/outjob_special_prof_Templ                                                       \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_outjob_special_prof"\
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                                                   \
+               > ${Eta_home_conf}/scripts/outjob_special_prof_Templ
+#
+ cat ${DIREta}/scripts/run.com_real_mpi_Templ                                                          \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_run.com_real_mpi"           \
+               | sed -e "s;NNodes;${NNodes};g"                                                         \
+               | sed -e "s;NCpusNode;${NCpusNode};g"                                                   \
+               | sed -e "s:ExecCmdNPF:${ExecCmdNPF}:g"                                                 \
+               > ${Eta_home_conf}/scripts/run.com_real_mpi_Templ
+#
+ cat ${DIREta}/scripts/submit_netcdf.sh_Templ                                                          \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_submit_netcdf.sh"           \
+               > ${Eta_home_conf}/scripts/submit_netcdf.sh_Templ
+#
+ export NNodesPos=${NNodesPos//[[:space:]]}
+ export NCpusNodePos=${NCpusNodePos//[[:space:]]}
+ cat ${DIREta}/scripts/SubmitPos.sh_Templ                                                              \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_SubmitPos.sh"               \
+               | sed -e "s;NNodesPos;${NNodesPos};g"                                                   \
+               | sed -e "s;NCpusNodePos;${NCpusNodePos};g"                                             \
+               | sed "/IniJobControl/r ${DIRMODEL}/machines/${Machine}/JobControl_SubmitPos.sh"        \
+               | sed "/EndJobControl/r ${DIRMODEL}/machines/${Machine}/EndJobControl_SubmitPos.sh"     \
+               > ${Eta_home_conf}/scripts/SubmitPos.sh_Templ
+ cp -R ${DIREta}/ucl       ${Eta_home_conf}/ucl
+ cp -R ${DIRMODEL}/grb     ${Eta_home_conf}/grb
+ cp -R ${DIRMODEL}/Figuras ${Eta_home_conf}/Figuras
+
+
+###################################################################################################
+
+cd ${Eta_home}/install/
+cp parmeta.in ${Eta_home}/src/include
+cp parmeta.in ${Eta_home}/src/post/post_new
+cp parmeta.in ${Eta_home}/src/post/post0
+
+
+cd ${Eta_home}/src/etafcst
+cat ${Eta_home}/src/etafcst/MODULE_PARMETA.f90.mpiin | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:lmin:$LM: | sed s:lsmin:$LSM: | sed s:ipcin:$INPES: | \
+sed s:jpcin:$JNPES: > ${Eta_home}/src/etafcst/MODULE_PARMETA.f90
+
+if [ $INPES -eq 1 ]
+then
+        if [ $JNPES -eq 1 ]
+        then
+        cp makefile.dummympi makefile
+        cp mpif.h_dummy mpif.h
+        else
+        cp makefile.realmpi makefile
+        rm -f mpif.h
+        fi
+else
+        cp makefile.realmpi makefile
+        rm -f mpif.h
+fi
+
+## assume at if using MPI on model, can use for post as well
+##
+##  changed mind...force post to be a serial code
+
+cd ${Eta_home}/src/post/post_new
+
+#cp GENLL_orig.f GENLL.f
+
+ if [ $INPES -eq 1 ]
+ then
+         if [ $JNPES -eq 1 ]
+        then
+
+        cp makefile.dummympi makefile
+        cp mpif.h_dummy mpif.h
+
+        else
+        cp makefile.realmpi makefile
+        rm -f mpif.h
+        fi
+ else
+        cp makefile.realmpi makefile
+        rm -f mpif.h
+ fi
+
+
+cd ${Eta_home}/src/include
+
+cat parmeta.in  | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:lmin:$LM: | sed s:lsmin:$LSM:  > parmeta
+
+cd ${Eta_home}/src/post/quilt
+cat parmeta.mpiin | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:lmin:$LM: | sed s:lsmin:$LSM: | sed s:ipcin:$INPES: | \
+sed s:jpcin:$JNPES: > parmeta
+
+cd ${Eta_home}/src/post/post_new
+
+cat parmeta.in  | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:lmin:$LM: | sed s:lsmin:$LSM:  > parmeta
+
+cd ${Eta_home}/src/post/post0
+
+cat parmeta.in | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:lmin:$LM: | sed s:lsmin:$LSM:  > parmeta
+
+
+cd ${Eta_home}/src/post/sndp
+cat parmeta.in | sed s:LMIN:$LM: > parmeta
+
+
+cd ${Eta_home}/src/post/staids
+cat parmeta.in | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:lmin:$LM: | sed s:lsmin:$LSM:  > parmeta
+
+cd ${Eta_home}/src/post/profile
+cat parmeta.f90.in | sed s:lmin:$LM: > parmeta.f90
+
+cd ${Eta_home}/src/prep/sst
+rm -f ${Eta_home}/src/prep/sst/MODULE_PARMCONF.f90
+
+
+dlmd=`${Eta_home}/scripts/def_eta.scr ${Res}|awk '{print $1}'`
+dphd=`${Eta_home}/scripts/def_eta.scr ${Res}|awk '{print $2}'`
+
+cat ${Eta_home}/src/prep/sst/MODULE_PARMCONF.f90.in | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:dlmdin:$dlmd:   | sed s:dphdin:$dphd: | \
+sed s:tlm0din:${Lon}: | sed s:tph0din:${Lat}: > ${Eta_home}/src/prep/sst/MODULE_PARMCONF.f90
+
+rm -f ${Eta_home}/src/prep/vgreen/MODULE_PARMCONF.f90
+cat ${Eta_home}/src/prep/vgreen/MODULE_PARMCONF.f90.in | sed s:imin:$IM: | sed s:jmin:$JM: | \
+sed s:dlmdin:$dlmd:   | sed s:dphdin:$dphd: | \
+sed s:tlm0din:${Lon}: | sed s:tph0din:${Lat}: > ${Eta_home}/src/prep/vgreen/MODULE_PARMCONF.f90
+
+
+
+rm -f ${Eta_home}/src/prep/veg/parmetaveg   
+
+cat << EOF > ${Eta_home}/src/prep/veg/parmetaveg
+       PARAMETER (IM=${IM},JM=${JM},IMJM=IM*JM-JM/2)
+       PARAMETER (DLMD=${dlmd},
+     &  DPHD=${dphd})
+       PARAMETER (TLM0D=${Lon},TPH0D=${Lat})
+EOF
+
+cd ${Eta_home}/src/prep/newsoil
+rm -f ${Eta_home}/src/prep/newsoil/parmetasoil
+cat << EOF > ${Eta_home}/src/prep/newsoil/parmetasoil
+       PARAMETER (IM=${IM},JM=${JM},IMJM=IM*JM-JM/2)
+       PARAMETER (DLMD=${dlmd},
+     &  DPHD=${dphd})
+       PARAMETER (TLM0D=${Lon},TPH0D=${Lat})
+EOF
+
+pwd
+cd ${Eta_home_conf}/scripts
+
+let npr=${INPES}*${JNPES}
+
+# by Gustavo PROJETA/CPTEC/INPE - Lamosa PAD/CPTEC/INPE 2007 ----------------
+
+##RESOLUCAO DA RODADA DIVIDIDA POR 100
+resol=`echo ${Res} / 100 | bc -l | cut -c 1-3`
+format1="%-38s %-38s\n"
+printf "%s\n" "####################################################################################### "  > ./DIRROOT
+printf "%s\n" "export Eta_home=${Eta_home}"                                                              >> ./DIRROOT
+printf "%s\n" "export Eta_support=${Eta_support}"                                                        >> ./DIRROOT
+printf "%s\n" "export Eta_home_conf=${Eta_home_conf}"                                                    >> ./DIRROOT
+printf "%s\n" "export Eta_home_install=${Eta_home_install}"                                              >> ./DIRROOT
+printf "%s\n" "export Eta_run_output=${Eta_run_output}"                                                  >> ./DIRROOT
+printf "%s\n" "export Eta_output=${Eta_output}"                                                          >> ./DIRROOT
+printf "%s\n" "export datain=${datain}"                                                                  >> ./DIRROOT
+printf "%s\n" ""                                                                                         >> ./DIRROOT
+printf "%s\n" "#Configuracao Inicial da rodada "                                                         >> ./DIRROOT
+printf "$format1" "Lon=${Lon}"                      "# Longitude do ponto central"                       >> ./DIRROOT
+printf "$format1" "Lat=${Lat}"                      "# Latitude do ponto central"                        >> ./DIRROOT
+printf "$format1" "IM=${IM}"                        "# Numero de pontos em x. Deve ser sempre impar"     >> ./DIRROOT
+printf "$format1" "JM=${JM}"                        "# Numero de pontos em y. Deve ser sempre impar"     >> ./DIRROOT
+printf "$format1" "LM=${LM}"                        "# Numero de niveis verticais"                       >> ./DIRROOT
+printf "$format1" "LSM=${LSM}"                      "# Numero de niveis de pos-processamento"            >> ./DIRROOT
+printf "$format1" "PT=${PT}"                        "# Topo do modelo em grade regular"                  >> ./DIRROOT
+printf "$format1" "Res=${Res}"                      "# Resolucao horizontal do modelo em km"             >> ./DIRROOT
+printf "$format1" "resol=0${resol}"                 "# Resolucao hoizontal do modelo em graus"           >> ./DIRROOT
+printf "$format1" "Conf=${confin}"                  "# Nome do experimento(sufixo do set_parmeta)"       >> ./DIRROOT
+printf "$format1" "npr=${npr}"                      "# Total de processadores utilizados no etafcst"     >> ./DIRROOT
+printf "$format1" "npio_server=${npio_server}"      "# Numero de processadores para I/O"                 >> ./DIRROOT
+printf "$format1" "npio_server_groups=${npio_server_groups}"   "# Numero de comunicadores MPI"           >> ./DIRROOT
+printf "$format1" "QSB=${QSB}"                      "# utilitario usado para submissao em fila"          >> ./DIRROOT
+printf "%s\n" "####################################################################################### " >> ./DIRROOT
+###########################################################################################################
+###############################################################################################################
+
+
+format1="%-31s %-69s\n"
+# Tempo - configuracao controle
+###############################################################################################################
+printf "%s\n"	    "#####################################################################################################" >./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Observacoes 							  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  												  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Executaveis 							  ">>./ConfigRun_Cntrl
+printf "%s\n"       "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "InitBCexec=initbc.exe"          "# Executavel do pre processamento"				   >>./ConfigRun_Cntrl
+printf "${format1}" "Fctexec=etafcst.x"              "# Executavel do modelo"						   >>./ConfigRun_Cntrl
+printf "${format1}" "EtaPostexec=etapost_new.x"      "# Executavel do pos processamento"				   >>./ConfigRun_Cntrl
+printf "${format1}" "Reformexec=reform_2d3d.x"       "# Executavel do para gerar os arq. binarios"			   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da rodada						  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "Exp=${Exp}"		     "# Label do experimento"						   >>./ConfigRun_Cntrl
+printf "${format1}" "TypRun=${TypRun}"		     "# Define se a rodada e uma simulacao ou previsao"                    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Denomina-se simulacao quando se utiliza dados de analise nas"      >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# condicoes de contorno."                                            >>./ConfigRun_Cntrl
+printf "${format1}" "Fct=${Fct}"		     "# Tempo de previsao em horas."					   >>./ConfigRun_Cntrl
+printf "${format1}" "IntFct=${IntFct}"               "# Frequencia de saida em horas das variaveis 2D,"                    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# se Split2D3D=".True." ou das variaveis 2D 2 3D se"                 >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Split2D3D=".False." (ex.: IntFct=1)"                               >>./ConfigRun_Cntrl
+printf "${format1}" "IntFct3D=${IntFct3D}"           "# Frequencia de saida em horas das variaveis 3D (ex.: IntFct=6)."    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Se diferente de InitFct, a atribuicao da variavel Split2D3D deve"  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# ser .True."                                                        >>./ConfigRun_Cntrl
+printf "${format1}" "IntPhisAcum=${IntPhisAcum}"     "# Frequencia em horas de acumulo de quantidades como chuva, Tmax"    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# e Tmin, ﬂuxos de energia (calor latente, onda curta incidente,"    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# etc.(por ex. IntPhisAcum=1 ou  IntPhisAcum=6 )."                   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Recomenda-se utilizar a mesma frequencia de InitFct."              >>./ConfigRun_Cntrl
+printf "${format1}" "Split2D3D=.True."               "# Se true: Gera arquivo com os campos de saida 2D e 3D separados"    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Se false: Gera arquivo unico com os campos 2D e 3D"		   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configiguracao do pre processamento 				  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "run_preproc=yes"                "# yes: executa o pre processamento, gerando os arquivos"        	   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "#      de condicao inicial e de contornos (INIT.file, CNST.file,"    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "#      BNDY.file e sst2_EGRD"                                        >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "#  no: utiliza os arquivos de condicao inicial e de contorno"        >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "#      da rodada indicada pela variavel preproc_cp"                  >>./ConfigRun_Cntrl
+printf "${format1}" "preproc_cp=Eta08_C00_"          "# Se run_preproc=no, define o exp. que gerou as informacoes de"	   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# pre processamento"						   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da fonte do modelo drive				  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "CInit=${CInit}"                 "# Tipo de condicao inicial (ex.: cpteta40,cpteta15,gfs2gr0.25,BAM,"  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# BESM,CFS)"                                                         >>./ConfigRun_Cntrl
+printf "${format1}" "BCond=${BCond}"                 "# Tipo de condicao de contorno (ex.: cpteta40,cpteta15,gfs2gr0.25,"  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# BAM,BESM,CFS)"                                                     >>./ConfigRun_Cntrl
+printf "${format1}" "InitBC=${InitBC}"               "# Frequencia de atualizacao das bordas"				   >>./ConfigRun_Cntrl
+printf "${format1}" "TInitBC=${TInitBC}"             "# Utiliza nas condicoes de contorno lateral uma previsao do mesmo"   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# horario da rodada (TlnitBC=1) ou utiliza uma previsao iniciada"    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# 12h ou 6h antes (TlnitBC=0)."                                      >>./ConfigRun_Cntrl
+printf "${format1}" "HInitBC=${HInitBC}"             "# Caso TInitBC=0 a variavel HInitBC define a antecedencia, em horas" >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# da rodada que fornecera as condicoes de contorno"                  >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da fonte da topo					  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "topo=${topo}"                   "# Define qual o mapa de topografia será utilizado (90m ou 1km)."     >>./ConfigRun_Cntrl
+printf "${format1}" "slope=${slope}"                 "# .true. utiliza a coordenada vertical refinada com cut-cells."      >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Habilita a melhora da vegetacao (leitura arquivo externo)"  	   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "vegflag=${vegflag}"             "# .true. utiliza o mapa de vegetacao de Sestini et al. (2002)."      >>./ConfigRun_Cntrl 
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da fonte da sst					  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "sstflg=${sstflg}"               "# .true. habilita a atualizaco, diaria, da temperatura"              >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# da superficie do mar"                                              >>./ConfigRun_Cntrl
+printf "${format1}" "sstmnthly=${sstmnthly}"         "# .true. utiliza arquivo de temperatura da superficie do mar com"    >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# valores mensais, geralmente disponibilizada para integracao"       >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# climatica com o BAM ou mudancas climaticas."                       >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# .false. utiliza arquivo de temperatura da superficie do mar com"   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# valores diarios, geralmente disponibilizada por modelos acoplados" >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# (ex.: BESM, CFS)."                                                 >>./ConfigRun_Cntrl
+printf "${format1}" "sstsource=${sstsource}"         "# Arquivo de origem da SST (ex.: NOAA, BESM, CFS)"                   >>./ConfigRun_Cntrl
+printf "${format1}" "sstres=${sstres}"               "# Resolucao da temperatura da superficie do mar"                     >>./ConfigRun_Cntrl
+printf "${format1}" "sstYYYY=1978"                   "# Ano do primeiro record do arq. de sst"				   >>./ConfigRun_Cntrl
+printf "${format1}" "sstMM=01"                       "# Mes do primeiro record do arq. de sst"				   >>./ConfigRun_Cntrl
+printf "${format1}" "sstDD=01"                       "# Dia do primeiro record do arq. de sst"				   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da fonte de co2					  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "co2flg=${co2flg}"               "# ".true." atualiza o CO2 durante a simulacao. Utilizado para"       >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "#  simulacoes de mudancas climaticas" 	                           >>./ConfigRun_Cntrl
+printf "${format1}" "co2ramp=${co2ramp}"             "# "								   >>./ConfigRun_Cntrl
+printf "${format1}" "co2TransCoef=${co2TransCoef}"   "# "								   >>./ConfigRun_Cntrl
+printf "${format1}" "co2ppm=${co2ppm}"               "# "								   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da fonte da topo					  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "coac=${coac}"                   "# Valor do parametro de suavizacao dependente da resolucao"          >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# horizontal do modelo (ex. em 8km: coac=0.6; em 1km, coac=1.0)"     >>./ConfigRun_Cntrl
+printf "${format1}" "lcoac=${lcoac}"                 "# se true utiliza equacao para o calculo do coac"	                   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao da fonte da topo					  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "qtdtypsolo=${qtdtypsolo}"       "# Quantidade de tipos de solo"                                       >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# mapa FAO: qtdtypsolo=15; mapa Doyle: qtdtypesolo=9"                >>./ConfigRun_Cntrl
+printf "${format1}" "soilmoist=${soilmoist}"         "# .true. utiliza a umidade do solo inicial fornecido por um"         >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# arquivo."                                                          >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# .false. utiliza a umidade do solo do arquivo da condicao inicial"  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# atmosferica."                                                      >>./ConfigRun_Cntrl 
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Opcoes de umidade do solo						  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "prop1=1.0"   		     "#"								   >>./ConfigRun_Cntrl
+printf "${format1}" "prop2=1.0"   		     "#"								   >>./ConfigRun_Cntrl
+printf "${format1}" "prop3=1.0"   		     "#"								   >>./ConfigRun_Cntrl
+printf "${format1}" "prop4=1.0"   		     "#"								   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Opcoes de esquemas de conveccao cumulos				  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "cucnvcflg=${cucnvcflg}"         "# .true. ligar o esquema de parametrizacao de conveccao."            >>./ConfigRun_Cntrl
+printf "${format1}" "cucnvcsqm=${cucnvcsqm}"         "# Define o esquema de conveccao"                                     >>./ConfigRun_Cntrl 
+printf "${format1}" "#"                              "# Betts-Miller: cucnvcsqm=1, Kain-Fritsch: cucnvcsqm=2"              >>./ConfigRun_Cntrl
+printf "${format1}" "cuparm=cuparmdata_A.dat"        "# Arquivo de parametros usados pelo esquema Betts-Miller"	           >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Opcoes de esquemas de microfisica de nuvens 			  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "microphyssqm=${microphyssqm}"   "# Define o esquema de microfisica"                                   >>./ConfigRun_Cntrl 
+printf "${format1}" "#"                              "# Ferrier: microphyssqm=1, Zhao: microphyssqm=2"                     >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Configuracao do esquema de microfisica de nuvens Ferrier		  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "rhgrdl=0.93"                    "# Umidade relativa critica para formacao das gotas (continente)"     >>./ConfigRun_Cntrl
+printf "${format1}" "rhgrds=0.95"                    "# Umidade relativa critica para formacao das gotas (oceano)"         >>./ConfigRun_Cntrl
+printf "${format1}" "vsowadst=0.8"                   "# Fator de multiplicacao da velocidade de queda da neve"             >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Opcoes de esquemas de conveccao rasa				  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "shlcnvcflg=${shlcnvcflg}"       "# .true. para manter ligado o esquema de conveccao rasa, quando a"   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# parametrizacao de conveccao for desligada (cucnvcflg=.false.) ou"  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# .false. para desligar."		   		                   >>./ConfigRun_Cntrl
+printf "${format1}" "shlcnvcsqm=${shlcnvcsqm}"       "# Define o esquema de conveccao rasa (Betts-Miller: shlcnvcsqm=1)"   >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Damping da divergencia						  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "lddampflg=.true."               "# Habilita o damping da divergencia"			           >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# DDAMP MODIFIES THE WIND COMPONENTS SO AS TO REDUCE THE HORIZONTAL" >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# DIVERGENCE."						           >>./ConfigRun_Cntrl
+printf "${format1}" "ntddmp=1."                      "# Intervalo, em horas, de aplicacao do damping"                      >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			     Parametros de definicao do RESTART 				  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "writeout2restrt=.false."        "# true escreve o arquivo OUT2RESTRT. Em simulacoes longas, por"      >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# exemplo de 30 anos, e interessante que sejam executadas por"       >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# partes, sendo interrompidas e reiniciadas do ponto em que foi"     >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# interrompida. Para reiniciar (restart) e necessario que o estado"  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# do modelo seja salvo no arquivo OUT2RESTART."			   >>./ConfigRun_Cntrl
+printf "${format1}" "freqout2restrt=30"	             "# frequencia em DIAS de escrita do arquivo OUT2RESTRT"               >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# (ex.: a cada 1 mes: freqout2restr=30)"                             >>./ConfigRun_Cntrl
+printf "${format1}" "lfcttimchk=.true."              "# ".true." habilita a escrita da evolucao da rodada (FCST TIMESTEP)" >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# no output. (ex.: a cada 1 mes: freqout2restr=30)"                  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Para rodadas de mudancas climaticas, e recomendado ".false.""      >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Opcoes de arquivos de saida do pos processamento			  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "postout=latlonnopack"           "# "latlonnopack" gera arquivos de saida no formato binario,"         >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# interpolados na grade definida no namelist cntrl.parm_NOPACK"      >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# "latlon" gera arquivos grib na grade nativa do modelo (grade E)."  >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# A interpolacao para a grade regular e feita pelo programa copygb"  >>./ConfigRun_Cntrl
+printf "${format1}" "lgrib="false""                  "# "true" gera, a partir dos dados binarios, as saidas no"            >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# formato grib1"                                                     >>./ConfigRun_Cntrl
+printf "${format1}" "lnetcdf="false""                "# "true" gera, a partir dos dados binarios, as saidas no"            >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# formato netcdf"		                                           >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Habilita a geracao automatica das figuras				  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "lfig="false""                   "# "true" habilita a geracao de um conjunto pre definido de figuras"  >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Define os caminhos dos utilitarios grads e cdo			  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "cdoPath=${cdoPath}"             "#"                                                                   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Caminho do comando cdos. Utilizado na conversao dos dados binarios">>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# no formato netcdf"                                                 >>./ConfigRun_Cntrl
+printf "${format1}" "gradsPath=${gradsPath}"         "#"                                                                   >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# Caminho do comando grads. Utilizado na geracao automatica das"     >>./ConfigRun_Cntrl
+printf "${format1}" "#"                              "# figuras "                                                          >>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "%s\n"	    "#  			    Definicao do ambiente (MACHINE) e filas de submissao de processos	  ">>./ConfigRun_Cntrl
+printf "%s\n"	    "#####################################################################################################">>./ConfigRun_Cntrl
+printf "${format1}" "MACHINE=${Machine}"             "# define o ambiente de instalacao do modelo"			   >>./ConfigRun_Cntrl
+printf "${format1}" "QUE1=${QUE1}"                   "# fila de submissao dos processos sequsnciais"			   >>./ConfigRun_Cntrl
+printf "${format1}" "QUE2=${QUE2}"                   "# fila de submissao dos processos paralelos"			   >>./ConfigRun_Cntrl
+printf "${format1}" "QUE3=${QUE3}"                   "# fila de submissao dos processos de pós processamento "             >>./ConfigRun_Cntrl
+printf "${format1}" "NNodesPos=${NNodesPos}"         "# numero de nós utilizados no pós processamento "                    >>./ConfigRun_Cntrl
+printf "${format1}" "NCpusNodePos=${NCpusNodePos}"   "# numero total de processadores utilizados no pós processamento"     >>./ConfigRun_Cntrl
+printf "${format1}" "NSPos=1"                        "# numero total de processos paralelos de pós processamento"          >>./ConfigRun_Cntrl
+printf "%s\n"       "#####################################################################################################">>./ConfigRun_Cntrl
+
+####################################################################################################################
+
+#AJUSTE INICIAL DO POS-PROCESSAMENTO
+cat ${Eta_home}/scripts/ajuste_pos.sh_Templ | sed "/INCLUI/r ./DIRROOT" > ${Eta_home_conf}/scripts/ajuste_pos.sh
+chmod 755 ${Eta_home_conf}/scripts/ajuste_pos.sh
+#
+cat ${Eta_home}/scripts/ajuste_pos_v2.sh_Templ | sed "/INCLUI/r ./DIRROOT" > ${Eta_home_conf}/scripts/ajuste_pos_v2.sh
+chmod 755 ${Eta_home_conf}/scripts/ajuste_pos_v2.sh
+###CRIANDO O ARQUIVO namelist QUE SERA USADO PELO PROGRAMA corners.f90
+let imjm=${IM}*${JM}-${JM}/2
+cat << EOF > ${Eta_home_conf}/scripts/namelist
+${IM}
+${JM}
+${imjm}
+${Lat}
+${Lon}
+${dlmd}
+${dphd}
+0${resol}
+EOF
+
+cat ${Eta_home}/scripts/MypeDistrb.sh_Templ             \
+| sed s:imin:$IM: | sed s:jmin:$JM:                     \
+| sed s:inpesin:$INPES: | sed s:jnpesin:$JNPES:         \
+> ${Eta_home_conf}/scripts/MypeDistrb.sh
+
+cat << EOF > ${Eta_home_conf}/scripts/corners.sh
+#!/bin/bash
+# PbsSlurm
+cd ${Eta_home_conf}/scripts
+
+ExecCmd1P ${Eta_home_conf}/exe/corners.exe > ${Eta_home_conf}/scripts/Corners.out
+${Eta_home_conf}/scripts/ajuste_pos.sh
+EOF
+
+cat ${Eta_home_conf}/scripts/corners.sh                                         \
+               | sed "/PbsSlurm/r ${DIRMODEL}/machines/${Machine}/PbsSlurm_corners.sh"      \
+               | sed -e "s:EXPPATH:${Eta_home_conf}:g"                       \
+               | sed -e "s:ExecCmd1P:${ExecCmd1P}:g"                       \
+               > ${Eta_home_conf}/scripts/corners.nqs
+chmod 755 ${Eta_home_conf}/scripts/corners.nqs
+cat ${Eta_home}/scripts/start.sh_Templ                        \
+               | sed "/INCLUI/r ./DIRROOT" > ${Eta_home_conf}/scripts/start.sh
+
+chmod 755 ./*
+# Make file variables.f90 in directore latlon2ll
+cat << EOF > ${Eta_home}/src/post/latlon2ll/variables.f90
+    module variables
+!
+! Dimension 1D variable
+!
+      integer, parameter         :: kmax=${LSM}
+      real,dimension(kmax)       :: pr       !
+
+      DATA pr/50., 100.,150.,200.,250.,300.,350.,   &
+     &        400.,450.,500.,550.,600.,650.,   &
+     &        700.,750.,800.,850.,900.,925.,      &
+     &        950.,1000.,1020./
+     
+
+    end module variables
+EOF
+
+cat << EOF > ${Eta_home_conf}/ucl/CTLLEVELS
+ZDEF ${LSM} LEVELS 1020 1000 950 925 900 850 800
+                  750  700 650 600 550 500
+                  450  400 350 300 250 200 
+                  150  100 50
+EOF
+
+# Make arquive with pressure levels for namelist_grib
+# Make arquive with pressure levels for fsctdata.meso 
+# The pressure levels must be the same as variables.f90 arquive above
+cat << EOF > ${Eta_home_conf}/ucl/PressLevel
+ SPL=5000.,10000.,15000.,20000.,25000.,30000.,35000.,
+          40000.,45000.,50000.,55000.,60000.,
+	  65000.,70000.,75000.,80000.,85000.,
+	  90000.,92500.,95000.,100000.,102000.,
+EOF
+
+# Make arquive with pressure levels for index_mlevs
+cat << EOF > ${Eta_home_conf}/ucl/index_mlevs.txt
+1020.,
+1000.,
+950., 
+925., 
+900., 
+850., 
+800., 
+750., 
+700., 
+650.,
+600., 
+550., 
+500., 
+450., 
+400., 
+350., 
+300., 
+250., 
+200., 
+150., 
+100., 
+50.
+EOF
+
+
+# Cria CTLTEMPLATE
+
+cat << EOF > ${Eta_home_conf}/ucl/CTLTEMPLATE_2D_temp 
+DSET ^NARQ
+OPTIONS TEMPLATE 
+UNDEF 1.e+20
+TITLE 29help Days of Sample Model Output 
+XDEF  ptx LINEAR  lonoeste   0${resol}
+YDEF  pty LINEAR  latsul   0${resol}
+ZDEF 1 LEVELS 1020 
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 46
+PSLM    0  99     Mesinger M S L Pressure  (hPa)
+PSLC    0  99     Surface Pressure         (hPa)
+TP2M    0  99     Shelter Temperature      (K)
+MXTP    0  99     Max Temperature          (K)
+MNTP    0  99     Min Temperature          (K)
+DP2M    0  99     Shelter Dew Temp.        (K)
+US2M    0  99     Shelter Espec. H. 2m     (%)
+UR2M    0  99     Relative Humidity 2m     (kg/kg)
+U10M    0  99     U 10m                    (m/s)
+V10M    0  99     V 10m                    (m/s)
+MAGV    0  99     Wind Magnitude 10M       (m/s)
+U100    0  99     U 100m                   (m/s)
+V100    0  99     V 100m                   (m/s)
+PREC    0  99     Total  6h Precip.        (m)
+PRCV    0  99	  Conv   6h Precip.	   (m)
+PRGE    0  99	  Large Scl  6h Prec.	   (m)
+NEVE    0  99	  Snowfall 6h		   (m)
+CLSF    0  99	  Time Ave Sfc Lat Ht Flx  ()
+CSSF    0  99	  Time Ave Sfc Sen Ht Flx  ()
+GHFL    0  99     Time Ave Ground  Ht Flx  ()
+TSFC    0  99     Sfc (skin) Temperature   (K)
+TSOIL   0  99     Soil Temperature         (K)
+USOIL   0  99     Soil Moisture            (0-1)
+SMAV    0  99     Soil Moisture Avail      ()
+RNOF    0  99     Storm Sfc Rnoff 6h       ()
+RNSG    0  99     Storm Sfc Rnoff SG 6h    ()
+USST    0  99	  Sfc  U wind Stress	   ()
+VSST    0  99	  Sfc  V wind Stress	   ()
+LWNV    0  99     Low cloud fraction       ()
+MDNV    0  99     Mid cloud fraction       ()
+HINV    0  99     High cloud fraction      ()
+CLD     0  00     Cloud                    ()
+OCIS    0  99     Ave Incmg Sfc SW Rad     (W/m2)
+OLIS    0  99     Ave Incmg Sfc LW Rad     (W/m2)
+OCES    0  99     Ave Outgo Sfc SW Rad     (W/m2)
+OLES    0  99     Ave Outgo Sfc LW Rad     (W/m2)
+ROCE    0  99     Ave Outgo TOA SW Rad     (W/m2)
+ROLE    0  99     Ave Outgo TOA LW Rad     (W/m2)
+ALBE    0  99     Albedo                   ()
+CAPE    0  99     CAPE                     (W/m2)
+AGPL    0  99     PRECIPITABLE WATER       (W/m2)
+QUINT   0  99     VERT INTGRTD Q x U       (W/m2)
+QVINT   0  99     VERT INTGRTD Q x V       (W/m2)
+CWINT   0  99     VERT INTG CLOUD WATER    (kg/kg)
+CIINT   0  99     VERT INTG CLOUD ICE      (kg/kg)
+HPBL    0  99     Plan Bound Lyr Height    (m)
+ENDVARS
+EOF
+cat << EOF > ${Eta_home_conf}/ucl/CTLTEMPLATE_2D3D_temp
+DSET ^NARQ
+OPTIONS TEMPLATE
+UNDEF 1.e+20
+TITLE 29help Days of Sample Model Output
+XDEF  ptx LINEAR  lonoeste   0${resol}
+YDEF  pty LINEAR  latsul   0${resol}
+EOF
+
+
+cat ${Eta_home_conf}/ucl/CTLLEVELS >> ${Eta_home_conf}/ucl/CTLTEMPLATE_2D3D_temp
+cat << EOF >> ${Eta_home_conf}/ucl/CTLTEMPLATE_2D3D_temp
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 54 
+PSLM    0  99     Mesinger M S L Pressure  (hPa)
+PSLC    0  99     Surface Pressure         (hPa)
+TP2M    0  99     Shelter Temperature      (K)
+MXTP    0  99     Max Temperature          (K)
+MNTP    0  99     Min Temperature          (K)
+DP2M    0  99     Shelter Dew Temp.        (K)
+US2M    0  99     Shelter Espec. H. 2m     (%)
+UR2M    0  99     Relative Humidity 2m     (kg/kg)
+U10M    0  99     U 10m                    (m/s)
+V10M    0  99     V 10m                    (m/s)
+MAGV    0  99     Wind Magnitude 10M       (m/s)
+U100    0  99     U 100m                   (m/s)
+V100    0  99     V 100m                   (m/s)
+PREC    0  99     Total  6h Precip.        (m)
+PRCV    0  99	  Conv   6h Precip.	   (m)
+PRGE    0  99	  Large Scl  6h Prec.	   (m)
+NEVE    0  99	  Snowfall 6h		   (m)
+CLSF    0  99	  Time Ave Sfc Lat Ht Flx  ()
+CSSF    0  99	  Time Ave Sfc Sen Ht Flx  ()
+GHFL    0  99     Time Ave Ground  Ht Flx  ()
+TSFC    0  99     Sfc (skin) Temperature   (K)
+TSOIL   0  99     Soil Temperature         (K)
+USOIL   0  99     Soil Moisture            (0-1)
+SMAV    0  99     Soil Moisture Avail      ()
+RNOF    0  99     Storm Sfc Rnoff 6h       ()
+RNSG    0  99     Storm Sfc Rnoff SG 6h    ()
+USST    0  99	  Sfc  U wind Stress	   ()
+VSST    0  99	  Sfc  V wind Stress	   ()
+LWNV    0  99     Low cloud fraction       ()
+MDNV    0  99     Mid cloud fraction       ()
+HINV    0  99     High cloud fraction      ()
+CLD     0  00     Cloud                    ()
+OCIS    0  99     Ave Incmg Sfc SW Rad     (W/m2)
+OLIS    0  99     Ave Incmg Sfc LW Rad     (W/m2)
+OCES    0  99     Ave Outgo Sfc SW Rad     (W/m2)
+OLES    0  99     Ave Outgo Sfc LW Rad     (W/m2)
+ROCE    0  99     Ave Outgo TOA SW Rad     (W/m2)
+ROLE    0  99     Ave Outgo TOA LW Rad     (W/m2)
+ALBE    0  99     Albedo                   ()
+CAPE    0  99     CAPE                     (W/m2)
+AGPL    0  99     PRECIPITABLE WATER       (W/m2)
+QUINT   0  99     VERT INTGRTD Q x U       (W/m2)
+QVINT   0  99     VERT INTGRTD Q x V       (W/m2)
+CWINT   0  99     VERT INTG CLOUD WATER    (kg/kg)
+CIINT   0  99     VERT INTG CLOUD ICE      (kg/kg)
+HPBL    0  99     Plan Bound Lyr Height    (m)
+ZGEO   ${LSM}  99     Geopotential height      (m)
+UVEL   ${LSM}  99     Zonal wind               (m/s)
+VVEL   ${LSM}  99     Meridional wind          (m/s)
+TEMP   ${LSM}  99     Temperature              (K)
+UMRL   ${LSM}  99     Relative Humidity        (%)
+OMEG   ${LSM}  99     Omega                    (hPa/s)
+UMES   ${LSM}  99     Specific humidity        (kg/kg)
+PSAT   ${LSM}  99     Equiv. Pot. Temp.        (K)
+ENDVARS
+EOF
+
+cat << EOF > ${Eta_home_conf}/ucl/CTLTEMPLATE_3D_temp
+DSET ^NARQ
+OPTIONS TEMPLATE
+UNDEF 1.e+20
+TITLE 29help Days of Sample Model Output
+XDEF  ptx LINEAR  lonoeste   0${resol}
+YDEF  pty LINEAR  latsul   0${resol}
+EOF
+
+cat ${Eta_home_conf}/ucl/CTLLEVELS >> ${Eta_home_conf}/ucl/CTLTEMPLATE_3D_temp
+
+cat << EOF >> ${Eta_home_conf}/ucl/CTLTEMPLATE_3D_temp
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 8  
+ZGEO   ${LSM}  99     Geopotential height      (m)
+UVEL   ${LSM}  99     Zonal wind               (m/s)
+VVEL   ${LSM}  99     Meridional wind          (m/s)
+TEMP   ${LSM}  99     Temperature              (K)
+UMRL   ${LSM}  99     Relative Humidity        (%)
+OMEG   ${LSM}  99     Omega                    (hPa/s)
+UMES   ${LSM}  99     Specific humidity        (kg/kg)
+PSAT   ${LSM}  99     Equiv. Pot. Temp.        (K)
+ENDVARS
+EOF
+cat << EOF > ${Eta_home_conf}/ucl/CTLTEMPLATE_SOIL_temp
+DSET ^NARQ
+OPTIONS TEMPLATE
+UNDEF 1.e+20
+TITLE 29help Days of Sample Model Output
+XDEF  ptx LINEAR  lonoeste   0${resol}
+YDEF  pty LINEAR  latsul   0${resol}
+ZDEF 1 LEVELS 1020
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 16
+STL1  0 99 Soil temperature level 1
+SWL1  0 99 Volumetric soil water layer 1
+STL2  0 99 Soil temperature level 2
+SWL2  0 99 Volumetric soil water layer 2
+STL3  0 99 Soil temperature level 3
+SWL3  0 99 Volumetric soil water layer 3
+STL4  0 99 Soil temperature level 4
+SWL4  0 99 Volumetric soil water layer 4
+STL5  0 99 Soil temperature level 5
+SWL5  0 99 Volumetric soil water layer 5
+STL6  0 99 Soil temperature level 6
+SWL6  0 99 Volumetric soil water layer 6
+STL7  0 99 Soil temperature level 7
+SWL7  0 99 Volumetric soil water layer 7
+STL8  0 99 Soil temperature level 8
+SWL8  0 99 Volumetric soil water layer 8
+ENDVARS
+EOF
+
+cat << EOF > ${Eta_home_conf}/ucl/CTLTEMPLATE_FIXED_temp
+DSET ^NARQ
+OPTIONS TEMPLATE
+UNDEF 1.e+20
+TITLE 29help Days of Sample Model Output
+XDEF  ptx LINEAR  lonoeste   0${resol}
+YDEF  pty LINEAR  latsul   0${resol}
+ZDEF 1 LEVELS 1020
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 2
+TOPO    0  99     Surface Height           (m)
+LSMK    0  99     Land/Sea Mask            (No Dim)
+ENDVARS
+EOF
+#Informacoes para o prof
+
+WBD=`echo "- ( ${IM} - 1 ) * ${dlmd}" |bc -l |awk '{printf("%.13f\n",$1)}'`
+SBD=`echo "-  ((${JM} - 1)  / 2 ) * ${dphd}" |bc -l |awk '{printf("%.13f\n",$1)}'`
+
+cat << EOF > ${Eta_home}/src/post/staids/stalst_add.txt
+       DATA WBD/${WBD}/,SBD/${SBD}/
+       DATA TPH0D/${Lat}/,TLM0D/${Lon}/
+       DATA DPHD/${dphd}/,DLMD/${dlmd}/
+       END BLOCK DATA STN
+EOF
+
+rm -f ${Eta_home}/src/post/staids/STALST.f
+cat ${Eta_home}/src/post/staids/STALST.f.in >> ${Eta_home}/src/post/staids/STALST.f
+cat ${Eta_home}/src/post/staids/stalst_add.txt >> ${Eta_home}/src/post/staids/STALST.f
+
+

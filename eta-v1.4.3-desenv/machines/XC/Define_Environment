@@ -1,0 +1,5 @@
+export QUE1="pesq"
+export QUE2="pesq"
+export cdoPath="/lustre_xc50/manoel_baptista/modules/software/cdo-1.9.6/bin"
+export gradsPath="/lustre_xc50/jorge_gomes/Eta_support_data/util/grads/2.1.a1/bin"
+export DIRSUPPORT=/lustre_xc50/jorge_gomes/Eta_support_data

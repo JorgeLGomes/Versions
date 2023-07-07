@@ -1,0 +1,4 @@
+FC = pgf90
+CC = /lib/cpp
+FFLAGS = -fast -DLITTLE
+CFLAGS = 

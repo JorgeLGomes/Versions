@@ -1,0 +1,4 @@
+ExecCmd1P="aprun -n 1"
+nprp=40
+ExecCmdNPP="aprun -n ${nprp}"
+ExecCmdNPF="aprun -n \${npr}"

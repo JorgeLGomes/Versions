@@ -1,0 +1,1 @@
+cat ${Dir_scr}/Submit_deco.list  | xargs -n 1 -P 4 /bin/bash

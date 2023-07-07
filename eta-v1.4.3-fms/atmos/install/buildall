@@ -1,0 +1,776 @@
+#!/bin/bash
+
+function clrd(){
+    local color=$1;
+    local backgnd=$2;
+    case $color in
+        0) tput setaf 0 ;; # black
+        1) tput setaf 1 ;; # red
+        2) tput setaf 2 ;; # green
+        3) tput setaf 3 ;; # yellow
+        4) tput setaf 4 ;; # blue
+        5) tput setaf 5 ;; # magenta
+        6) tput setaf 6 ;; # cyan
+        7) tput setaf 7 ;; # white 
+        *) tput sgr0;
+    esac
+    case $backgnd in
+        0) tput setb 0 ;; # black
+        1) tput setb 1 ;; # red
+        2) tput setb 2 ;; # green
+        3) tput setb 3 ;; # yellow
+        4) tput setb 4 ;; # blue
+        5) tput setb 5 ;; # magenta
+        6) tput setb 6 ;; # cyan
+        7) tput setb 7 ;; # white
+    esac
+}
+#
+###########################################################################################################
+###########################################################################################################
+#
+tput clear
+divider=================================
+divider=$divider$divider$divider$divider$divider$divider$divider
+width=`tput cols`
+#
+###########################################################################################################
+###########################################################################################################
+#
+confin=$1
+#
+###########################################################################################################
+###########################################################################################################
+#
+if [ ! -s ./set_parmeta_${confin} ] ; then
+ printf "%$width.${width}s\n\v" "$divider"
+ text="set_parmeta_${confin} not found!"
+ lng=`expr length "$(clrd 1)${text}$(clrd)"`
+ printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+ text="CONFIGURE YOUR EXPERIMENT"
+ lng=`expr length "${text}"`
+ printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+ text="MAKE A COPY OF THE TEMPLATE: set_parmeta_Template"
+ lng=`expr length "${text}"`
+ printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+ printf "%$width.${width}s\n\v" "$divider"
+ exit
+fi
+#
+###########################################################################################################
+###########################################################################################################
+# Define os diretorios raizes de home e saida
+export DIRINSTALL=`pwd`
+export DIREta=`dirname ${DIRINSTALL}`
+export DIRMODEL=`dirname ${DIREta}`
+export DIRMODELSCR=${DIREta}/scripts
+export DIREtaSRC=${DIREta}/src
+export DIRCONF=`dirname ${DIRMODEL}`/Eta_install
+export DIRDATAIN=${DIRMODEL}/datain
+export DIRSUPPORT=${DIRMODEL}/Eta_support_data
+#
+###########################################################################################################
+###########################################################################################################
+#
+if [ ! -s ${DIRMODEL}/libraries/w3lib ] ; then
+ printf "%$width.${width}s\n\v" "$divider"
+ text="LIBRARIES  not found!"
+ lng=`expr length "$(clrd 1)${text}$(clrd)"`
+ printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+ text="YOU MUST COMPILE THE LIBRARIES BEFORE PROCEEDING THE MODEL COMPILATION"
+ lng=`expr length "${text}"`
+ printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+ text="EXECUTE THE SCRIPT make_all_libs in ${DIRCONF}/libraries"
+ lng=`expr length "${text}"`
+ printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+ printf "%$width.${width}s\n\v" "$divider"
+ exit
+fi
+#
+###########################################################################################################
+###########################################################################################################
+#
+###########################################################################################################
+text="STARTING Eta MODEL INSTALL"
+###########################################################################################################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}" 
+text="USER: $USER"
+lng=`expr length "${text}"`
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+#
+#
+############################################################################################################
+############################################################################################################
+##################################
+text="DEFINE ENVIRONMENT INSTALL"
+##################################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+text="OPTIONS:"
+printf "%s\n" "$(clrd ${clr1})${text} ${msg1}$(clrd)"
+Machines=`ls -ld ${DIRMODEL}/machines/*|awk '{print $9}'`
+NumberOfMachines=`echo ${Machines}| wc -w`
+for i in `basename -a ${Machines}` 
+do
+ printf "%s\n" "   $(clrd ${clr1})${i} ${msg1}$(clrd)"
+done
+ltest="true"
+while [ ${ltest} = "true" ] ;do
+printf "%s" "Choose: "
+read Machine
+export ${Machine}
+Occurrence=`echo ${Machines}|grep ${Machine}|wc -w`
+if ((${Occurrence}>0));then
+   ltest="false"
+else
+   echo "ERROR: '${Machine}': unknown input. "
+   echo "Note: Case sensitive option!"
+fi
+done
+source ${DIRMODEL}/machines/${Machine}/Define_Environment
+#
+###########################################################################################################
+###########################################################################################################
+#
+###############################
+text="DEFINE MODEL TIME SCALE"
+###############################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+ltest="true"
+while [ ${ltest} = "true" ] ;do
+printf "%s\n" "     Weather : 1"
+printf "%s\n" "         S2S : 2"
+printf "%s\n" "Clim. Change : 3"
+printf "%s" "Choose [$(clrd 2)1$(clrd)/$(clrd 2)2$(clrd)/$(clrd 2)3$(clrd)]: "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  1 )
+    export config_install="Weather"
+    export vegflag=.true.
+    export sstflg=.false.
+    export sstmnthly=.false.
+    export sstsource="NOAA"
+    export sstres=0.083
+    export coac=0.6
+    export lcoac=.false.
+    export co2flg=.false.
+    export co2ramp="1959-2100"
+    export co2TransCoef="1979_2009"
+    export co2ppm="414"
+    ltest="false"
+    ;;
+  2 )
+    export config_install="S2S"
+    export vegflag=.true.
+    export sstflg=.true.
+    export sstmnthly=.true.
+    export sstsource="NOAA"
+    export sstres=0.083
+    export coac=0.6
+    export lcoac=.false.
+    export co2flg=.false.
+    export co2ramp="1959-2100"
+    export co2TransCoef="1979_2009"
+    export co2ppm="414"
+    ltest="false"
+    ;;
+  3 )
+    export config_install="ClimCng"
+    export vegflag=.true.
+    export sstflg=.true.
+    export sstmnthly=.true.
+    export sstsource="NOAA"
+    export sstres=0.083
+    export coac=0.6
+    export lcoac=.false.
+    export co2flg=.true.
+    export co2ramp="1959-2100"
+    export co2TransCoef="1979_2009"
+    export co2ppm="414"
+    ltest="false"
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input. "
+    ;;
+  esac
+fi
+done
+#
+###########################################################################################################
+###########################################################################################################
+#
+CmpTime=`date  "+%Y%m%d:%H:%M"`
+ArqCnfigDir=./.EtaModelInstallDir/CnfgDirInstall_${config_install} 
+ArqCnfig=./.EtaModelInstallDir/CnfgInstall_${config_install}_${confin}.${CmpTime} 
+ArqSet_parmeta=./.EtaModelInstallDir/set_parmeta_${confin}.${CmpTime} 
+
+if [ ! -s ${ArqCnfigDir} ] ; then
+ export Eta_home=${DIREta}
+ export Eta_support=${DIRSUPPORT}
+ export Eta_home_install=${DIRCONF}
+ export Eta_run_output=${Eta_home_install}/run
+ export Eta_output=${Eta_home_install}/out
+ export datain=${DIRDATAIN}
+else
+ source ${ArqCnfigDir}
+fi
+#
+############################################################################################################
+##########################################################################################################
+#
+# Define os diretorios da configuracao home e saida
+######################################
+text="DEFINE INSTALATION DIRECTORIES "
+######################################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+ltest="true"
+while [ ${ltest} = "true" ] ;do 
+cat << EOF_INSTALL_DIR
+
+Please specify the directory path under which the Eta Model will be $(clrd 1)installed$(clrd).
+The default directory is $(clrd 1)${Eta_home_install}$(clrd), but you may install anywhere you wish,
+assuming you have permission to do so.
+
+EOF_INSTALL_DIR
+
+echo -n "Installation directory? [$(clrd 2)${Eta_home_install}$(clrd)] "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  ~* )
+    export Eta_home_install=`eval echo $ans`
+    ;;
+  /* )
+    export Eta_home_install=$ans
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input.  Please use an absolute path when"
+    echo '     specifying the installation directory.'
+    quit
+    ;;
+  esac
+fi
+
+echo
+echo
+cat << EOF_INSTALL_DIR
+Please specify the directory path under which the Eta Model will be $(clrd 1)run$(clrd) the model.
+The default directory is $(clrd 1)${Eta_run_output}$(clrd), but you may install anywhere you wish,
+assuming you have permission to do so.
+
+EOF_INSTALL_DIR
+
+echo -n "Running directory? [$(clrd 2)${Eta_run_output}$(clrd)] "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  ~* )
+    export Eta_run_output=`eval echo $ans`
+    ;;
+  /* )
+    export Eta_run_output=$ans
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input.  Please use an absolute path when"
+    echo '     specifying the installation directory.'
+    quit
+    ;;
+  esac
+fi
+
+echo
+echo
+cat << EOF_INSTALL_DIR
+
+Please specify the directory path under which the Eta Model will be $(clrd 1)save the outputs$(clrd).
+The default directory is $(clrd 1)${Eta_output}$(clrd), but you may install anywhere you wish,
+assuming you have permission to do so.
+
+EOF_INSTALL_DIR
+
+echo -n "Store output directory? [$(clrd 2)${Eta_output}$(clrd)] "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  ~* )
+    export Eta_output=`eval echo $ans`
+    ;;
+  /* )
+    export Eta_output=$ans
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input.  Please use an absolute path when"
+    echo '     specifying the installation directory.'
+    quit
+    ;;
+  esac
+fi
+cat << EOF_INSTALL_DIR
+
+Please specify the directory path where the static files are located.
+The default directory is $(clrd 1)${Eta_support}$(clrd), but you may define anywhere you wish,
+assuming you have permission to do so.
+
+EOF_INSTALL_DIR
+
+echo -n "Static files directory? [$(clrd 2)${Eta_support}$(clrd)] "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  ~* )
+    export Eta_support=`eval echo $ans`
+    ;;
+  /* )
+    export Eta_support=$ans
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input.  Please use an absolute path when"
+    echo '     specifying the installation directory.'
+    quit
+    ;;
+  esac
+fi
+cat << EOF_INSTALL_DIR
+
+Please specify the directory path where the datain directory are located.
+The default directory is $(clrd 1)${datain}$(clrd), but you may define anywhere you wish,
+assuming you have permission to do so.
+
+EOF_INSTALL_DIR
+echo -n "Input data files directory (datain)? [$(clrd 2)${datain}$(clrd)] "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  ~* )
+    export datain=`eval echo $ans`
+    ;;
+  /* )
+    export datain=$ans
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input.  Please use an absolute path when"
+    echo '     specifying the input data directory.'
+    quit
+    ;;
+  esac
+fi
+
+printf "\n"
+printf "%s\n" "    Instalation Directory: ${Eta_home_install}"
+printf "%s\n" "         Runing Directory: ${Eta_run_output}"
+printf "%s\n" "   Output StoredDirectory: ${Eta_output}"
+printf "%s\n" "  Support files Directory: ${Eta_support}"
+printf "%s\n" "IC and CC files Directory: ${datain}"
+printf "%s" "Do you want to change? [$(clrd 2)Y$(clrd)/$(clrd 2)N$(clrd)] "
+read ans
+ansUP=`echo ${ans}| tr '[:lower:]' '[:upper:]'`
+if [ ${ansUP} = "N" ] ; then
+ ltest="false"
+fi
+
+done
+
+#
+############################################################################################################
+############################################################################################################
+#
+echo "export Eta_home=${Eta_home}                 " >  ${ArqCnfigDir}
+echo "export Eta_support=${Eta_support}           " >> ${ArqCnfigDir}
+echo "export Eta_home_install=${Eta_home_install} " >> ${ArqCnfigDir}
+echo "export Eta_run_output=${Eta_run_output}     " >> ${ArqCnfigDir}
+echo "export Eta_output=${Eta_output}             " >> ${ArqCnfigDir}
+echo "export datain=${datain}                     " >> ${ArqCnfigDir}
+
+#
+echo "config_install=${config_install}            " >  ${ArqCnfig}
+echo "vegflag=${vegflag}                          " >> ${ArqCnfig}
+echo "sstflg=${sstflg}                            " >> ${ArqCnfig}
+echo "sstmnthly=${sstmnthly}                      " >> ${ArqCnfig}
+echo "sstsource=${sstsource}                      " >> ${ArqCnfig}
+echo "sstres=${sstres}                            " >> ${ArqCnfig}
+echo "co2flg=${co2flg}                            " >> ${ArqCnfig}
+echo "co2ramp=${co2ramp}                          " >> ${ArqCnfig}
+echo "co2TransCoef=${co2TransCoef}                " >> ${ArqCnfig}
+echo "co2ppm=${co2ppm}                            " >> ${ArqCnfig}
+#
+export Eta_home=${Eta_home}
+export Eta_home_conf=${Eta_home_install}/${confin}
+export Eta_run_output=${Eta_run_output}/${confin}
+export Eta_output=${Eta_output}/${confin}
+export Eta_support=${Eta_support}
+export datain=${datain}
+#
+############################################################################################################
+############################################################################################################
+#
+###############################
+text="DEFINE TOPOGRAPH SOURCE"
+###############################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+ltest="true"
+while [ ${ltest} = "true" ] ;do
+printf "%s\n" "Topography Source"
+if [ -d ${Eta_support}/static/topo90m ] ; then
+  clrtp90=2
+  msgtp90=""
+else
+  clrtp90=1
+  msgtp90="Not Available"
+fi
+if [ -d ${Eta_support}/static/topo ] ; then
+  clrtp=2
+  msgtp=""
+else
+  msgtp="Not Available"
+  clrtp=1
+fi
+printf "%s\n" "$(clrd ${clrtp90})90m : 1 ${msgtp90}$(clrd)"
+printf "%s\n" "$(clrd ${clrtp})1km : 2 ${msgtp}$(clrd)"
+printf "%s" "Choose [$(clrd ${clrtp90})1$(clrd)/$(clrd ${clrtp})2$(clrd)]: "
+read ans
+if test -n "$ans" ; then
+  case ${ans} in
+  1 )
+    export topo=90m
+    ltest="false"
+    ;;
+  2 )
+    export topo=1km
+    ltest="false"
+    ;;
+  * )
+    echo
+    echo "ERROR: '$ans': unknown input.  "
+    ;;
+  esac
+fi
+done
+#
+echo "topo=${topo}"   >> ${ArqCnfig} 
+#
+############################################################################################################
+############################################################################################################
+#
+###############################
+text="DEFINE FORTRAN COMPILER"
+###############################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+
+ltest="true"
+pgf90  2> /dev/null
+if [ $? -eq 0 ] ; then
+  clr1=2
+  msg1=""
+else
+  clr1=1
+  msg1="Not Available"
+fi
+ftn  2> /dev/null
+if [ $? -eq 1 ] ; then
+  clr2=2
+  msg2=""
+else
+  msg2="Not Available"
+  clr2=1
+fi
+nvfortran 2> /dev/null
+if [ $? -eq 0 ] ; then
+  clr3=2
+  msg3=""
+else
+  msg3="Not Available"
+  clr3=1
+fi
+
+while [ ${ltest} = "true" ] ;do
+printf "%s\n" "Fortran Compiler"
+printf "%s\n" "$(clrd ${clr1})PGI    : 1 ${msg1}$(clrd)"
+printf "%s\n" "$(clrd ${clr2})CRAY   : 2 ${msg2}$(clrd)"
+printf "%s\n" "$(clrd ${clr3})NVIDIA : 3 ${msg3}$(clrd)"
+printf "%s" "Choose [$(clrd ${clr1})1$(clrd)/$(clrd ${clr2})2$(clrd)/$(clrd ${clr3})3$(clrd)]: "
+read ans
+if test -n "$ans" ; then
+  case $ans in
+  1 )
+     cp ${DIREtaSRC}/configure/make.inc_PGI ${DIREtaSRC}/configure/make.inc
+     cp ${DIREtaSRC}/configure/make.inc_initbc_PGI ${DIREtaSRC}/configure/make.inc_initbc
+     cp ${DIREtaSRC}/configure/make.inc_pos_PGI ${DIREtaSRC}/configure/make.inc_pos
+     ltest="false"
+    ;;
+  2 )
+     cp ${DIREtaSRC}/configure/make.inc_CRAY ${DIREtaSRC}/configure/make.inc
+     cp ${DIREtaSRC}/configure/make.inc_initbc_CRAY ${DIREtaSRC}/configure/make.inc_initbc
+     cp ${DIREtaSRC}/configure/make.inc_pos_CRAY ${DIREtaSRC}/configure/make.inc_pos
+     ltest="false"
+    ;;
+  3 )
+     cp ${DIREtaSRC}/configure/make.inc_NVIDIA ${DIREtaSRC}/configure/make.inc
+     cp ${DIREtaSRC}/configure/make.inc_initbc_NVIDIA ${DIREtaSRC}/configure/make.inc_initbc
+     cp ${DIREtaSRC}/configure/make.inc_pos_NVIDIA ${DIREtaSRC}/configure/make.inc_pos
+     ltest="false"
+    ;;
+   *   )
+    echo
+    echo "ERROR: '$ans': unknown input.  "
+    #quit
+    ;;
+  esac
+fi
+done
+#
+echo "Compiler=${ans}"       >> ${ArqCnfig} 
+#
+############################################################################################################
+############################################################################################################
+#
+####################################
+text="DEFINE JOB SUBMISSION COMMAND"
+####################################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+text="IF YOU DON'T USE ANY, CHOOSE NONE"
+lng=`expr length "${text}"`
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+#
+export QSB=" "
+ltest="true"
+
+qsub --version 2> /dev/null
+if [ $? -eq 0 ] ; then
+  clr2=2
+  msg2=""
+else
+  clr2=1
+  msg2="Not Available"
+fi
+sbatch --version 2> /dev/null
+if [ $? -eq 0 ] ; then
+  clr3=2
+  msg3=""
+else
+  clr3=1
+  msg3="Not Available"
+fi
+
+printf "%s\n" "Command Used for Job Submission"
+printf "%s\n" "$(clrd 2)NONE   : 1 $(clrd) "
+printf "%s\n" "$(clrd ${clr2})qsub   : 2 ${msg2}$(clrd) "
+printf "%s\n" "$(clrd ${clr3})sbatch : 3 ${msg3}$(clrd) "
+printf "%s" "Choose [$(clrd 2)1$(clrd)/$(clrd ${clr2})2$(clrd)/$(clrd ${clr3})3$(clrd)]: "
+
+read ans
+ansUP=`echo ${ans}| tr '[:lower:]' '[:upper:]'`
+if test -n "$ansUP" ; then
+  case $ans in
+ 1 )
+    export QSB=""
+    ;;
+ 2 )
+    export QSB="qsub "
+    ;;
+   * )
+    export QSB="sbatch"
+    ;;
+  esac
+fi
+#
+echo "QSB=${ans}"     >> ${ArqCnfig}
+#
+
+############################################################################################################
+############################################################################################################
+#
+cp ./set_parmeta_${confin} ${ArqSet_parmeta}
+#
+############################################################################################################
+############################################################################################################
+#
+printf "%$width.${width}s\n" "$divider"
+#
+############################################################################################################
+############################################################################################################
+#
+./configure ${confin} ${Machine}
+#
+############################################################################################################
+############################################################################################################
+#
+./build_pre
+#
+############################################################################################################
+############################################################################################################
+#
+cd ${DIRINSTALL}
+make
+#
+############################################################################################################
+############################################################################################################
+#
+./build_post
+#
+############################################################################################################
+############################################################################################################
+#
+mv ${Eta_home}/exe/*.x ${Eta_home_conf}/exe/
+mv ${Eta_home}/exe/*.exe ${Eta_home_conf}/exe/.
+#
+############################################################################################################
+############################################################################################################
+#
+cp -p ${ArqCnfigDir} ${Eta_home_conf}/scripts/.
+cp -p ${ArqCnfig} ${Eta_home_conf}/scripts/.
+cp -p ${ArqSet_parmeta} ${Eta_home_conf}/scripts/.
+#
+############################################################################################################
+############################################################################################################
+mkdir -p ${datain}
+#
+tput clear
+##########################
+text="COMPILATION CHECK "
+##########################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n\v" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+
+if [ -s ${Eta_home_conf}/exe/copygb.x ]                       ;then
+ printf "\t%s%37s\n"           "copygb.x                            " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK copygb.x COMPILATION                         $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/corners.exe ]                    ;then
+ printf "\t%s%37s\n"           "corners.exe                         " "$(clrd 2)OK$(clrd)"
+ ${QSB} ${Eta_home_conf}/scripts/corners.nqs 2>/dev/null
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK corners.exe COMPILATION                      $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/etafcst.x ]                      ;then
+ printf "\t%s%37s\n"           "etafcst.x                           " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK etafcst.x COMPILATION                        $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/etapost_new.x ]                  ;then
+ printf "\t%s%37s\n"           "etapost_new.x                       " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK etapost_new.x COMPILATION                    $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/etatopo.exe ]                    ;then
+ printf "\t%s%37s\n"           "etatopo.exe                         " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK etatopo.exe COMPILATION                      $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/etatopo_3s.exe ]                 ;then
+ printf "\t%s%37s\n"           "etatopo_3s.exe                      " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK etatopo_3s.exe COMPILATION                   $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/initbc.exe ]                     ;then
+ printf "\t%s%37s\n"           "initbc.exe                          " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK initbc.exe COMPILATION                       $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/newglobalsoil.x ]                ;then
+ printf "\t%s%37s\n"           "newglobalsoil.x                     " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK newglobalsoil.x COMPILATION                  $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/newsoil.x ]                      ;then
+ printf "\t%s%37s\n"           "newsoil.x                           " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK newsoil.x COMPILATION                        $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/post0.x ]                        ;then
+ printf "\t%s%37s\n"           "post0.x                             " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK post0.x COMPILATION                          $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/profile.x ]                      ;then
+ printf "\t%s%37s\n"           "profile.x                           " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK profile.x COMPILATION                        $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/reform_2d3d.x ]                  ;then
+ printf "\t%s%37s\n"           "reform_2d3d.x                       " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK reform_2d3d.x COMPILATION                    $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/select_3s.x ]                    ;then
+ printf "\t%s%37s\n"           "select_3s.x                         " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK select_3s.x COMPILATION                      $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/select.x ]                       ;then
+ printf "\t%s%37s\n"           "select.x                            " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK select.x COMPILATION                         $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/sndp.x ]                         ;then
+ printf "\t%s%37s\n"           "sndp.x                              " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK sndp.x COMPILATION                           $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/sst.x  ]                         ;then
+ printf "\t%s%37s\n"           "sst.x                               " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK sst.x  COMPILATION                           $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/staids.x ]                       ;then
+ printf "\t%s%37s\n"           "staids.x                            " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK staids.x COMPILATION                         $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/vegmsk_500m_urban_rj_sp.x ]      ;then
+ printf "\t%s%37s\n"           "vegmsk_500m_urban_rj_sp.x           " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n" "$(clrd 1 6)CHECK vegmsk_500m_urban_rj_sp.x COMPILATION        $(clrd)"
+fi
+if [ -s ${Eta_home_conf}/exe/vgreen.x ]                       ;then
+ printf "\t%s%37s\n"           "vgreen.x                            " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n"  "$(clrd 1 6)CHECK vgreen.x COMPILATION                        $(clrd)"
+fi
+if [ -s ${Eta_support} ]                       ;then
+ printf "\t%s%37s\n"           "Eta_support_data                    " "$(clrd 2)OK$(clrd)"
+else
+ printf "\t%43s\n"  "$(clrd 1 6)CHECK THE Eta_support_data PATH                   $(clrd)"
+fi
+
+####################################
+text="COMPILE DIRECTORY"
+####################################
+lng=`expr length "${text}"`
+printf "%$width.${width}s\n" "$divider"
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+text="DIRCONF: ${Eta_home_conf}"
+lng=`expr length "${text}"`
+printf "%`expr \( $width / 2 \) + \( $lng / 2 \)`s\n\v" "${text}"
+printf "%$width.${width}s\n" "$divider"
+
+

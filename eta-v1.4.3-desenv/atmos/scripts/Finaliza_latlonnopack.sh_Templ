@@ -1,0 +1,276 @@
+#!/bin/bash -f 
+#
+#
+##############
+# VARIAVEIS
+##############
+
+cd ${Eta_run}
+
+Split2D3DUP=`echo ${Split2D3D}| tr '[:lower:]' '[:upper:]'`
+lgribUP=`echo ${lgrib}| tr '[:lower:]' '[:upper:]'`
+
+BIN_OUT=${Eta_binctl}
+GRIB_OUT=${Eta_grbctl}
+if [ "${Split2D3DUP}" == ".TRUE." ] ; then
+  BIN_OUT2D=${BIN_OUT}/2D
+  BIN_OUT3D=${BIN_OUT}/3D
+  GRIB_OUT2D=${GRIB_OUT}/2D
+  GRIB_OUT3D=${GRIB_OUT}/3D
+  if [ ! -d ${BIN_OUT2D} ] ; then
+    mkdir -p ${BIN_OUT2D}
+    mkdir -p ${BIN_OUT3D}
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${BIN_OUT2D}/README   
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${BIN_OUT3D}/README   
+    if [ "${lgribUP}" == "TRUE" ] ; then
+       mkdir -p ${GRIB_OUT2D}
+       mkdir -p ${GRIB_OUT3D}
+       cat ${Eta_home_conf}/scripts/DIRROOT \
+           ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+           > ${GRIB_OUT2D}/README   
+       cat ${Eta_home_conf}/scripts/DIRROOT \
+           ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+           > ${GRIB_OUT3D}/README   
+    fi   
+  else
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${BIN_OUT2D}/README   
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${BIN_OUT3D}/README   
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${GRIB_OUT2D}/README   
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${GRIB_OUT3D}/README   
+  fi
+else
+  if [ ! -d ${BIN_OUT} ] ; then
+    mkdir -p ${BIN_OUT}
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+           ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+           > ${BIN_OUT}/README   
+    if [ "${lgribUP}" == "TRUE" ] ; then
+       mkdir -p ${GRIB_OUT}
+       cat ${Eta_home_conf}/scripts/DIRROOT \
+           ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+           > ${GRIB_OUT}/README   
+    fi
+  else
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${BIN_OUT}/README   
+    cat ${Eta_home_conf}/scripts/DIRROOT \
+        ${Eta_home_conf}/scripts/ConfigRun_${Cnfg} \
+        > ${GRIB_OUT}/README   
+  fi
+fi
+
+
+NARQ=${LabRod}${Run_Date}
+
+export Hfct=${1}
+export Fct=${2}
+export IntFct2D=${3}
+export IntFct3D=${4}
+
+Hfct2=`expr ${Hfct} \* 1 `
+Hfct2F=`printf "%06d" "${Hfct2}"`
+FctF=`printf "%06d" "${Fct}"`
+
+INTHR2=`echo ${IntPhisAcum} | cut -d. -f1`
+
+Arqout=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct2}hr ${NARQ}'+yyyymmddhh'`
+if [ "${Split2D3DUP}" == ".TRUE." ] ; then
+  mv ${Eta_run}/latlon_2d_${Hfct2F} ${BIN_OUT2D}/${Arqout}_2D.bin
+  TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct2}hr 'HHZDDMMMYYYY'`
+  TIMEOUT2=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct}hr 'hhZddmmmyyyy'`
+  TIMEOUT3=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct}hr 'yyyymmddhh'`
+
+  cat ${Eta_ucl}/CTLTEMPLATE_2D |sed "s/NARQ/${Arqout}_2D.bin/g"  \
+  |sed "s/NTIME/1/g" \
+  |sed "s/LLTIME/${TIMEOUT2}/g"|sed "s/INTHR/${IntFct2D}hr/g" > ${BIN_OUT2D}/${Arqout}_2D.ctl
+  chmod 755 ${BIN_OUT2D}/${Arqout}_2D.*
+
+  let NTIME=${Fct}/${IntFct2D}
+  let NTIME=${NTIME}+1
+  NTIME_2D=${NTIME}
+  TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + 0hr 'HHZDDMMMYYYY'`
+  cat ${Eta_ucl}/CTLTEMPLATE_2D |sed "s/NARQ/${NARQ}+%y4%m2%d2%h2_2D.bin/g"  \
+  |sed "s/NTIME/${NTIME}/g" \
+  |sed "s/LLTIME/${TIMEOUT}/g"|sed "s/INTHR/${IntFct2D}hr/g" > ${BIN_OUT2D}/${NARQ}_2D.ctl
+
+  chmod 755 ${BIN_OUT2D}/${Arqout}_2D.bin
+  chmod 755 ${BIN_OUT2D}/${Arqout}_2D.ctl
+  chmod 755 ${BIN_OUT2D}/${NARQ}_2D.ctl
+  if [ "${Hfct2F}" == "000000" ] ; then
+    mv ${Eta_run}/topo_lsmsk.bin ${BIN_OUT2D}/${NARQ}_FF.bin
+    cat ${Eta_ucl}/CTLTEMPLATE_FIXED |sed "s/NARQ/${NARQ}_FF.bin/g"  \
+    |sed "s/NTIME/1/g" \
+    |sed "s/LLTIME/${TIMEOUT2}/g"|sed "s/INTHR/${IntFct2D}hr/g" > ${BIN_OUT2D}/${NARQ}_FF.ctl
+    chmod 755 ${BIN_OUT2D}/${NARQ}_FF.*
+  fi
+
+  # 3D output files
+  if [ -s ${Eta_run}/latlon_3d_${Hfct2F} ] ; then
+    Arqout=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct2}hr ${NARQ}'+yyyymmddhh'`
+    mv ${Eta_run}/latlon_3d_${Hfct2F} ${BIN_OUT3D}/${Arqout}_3D.bin
+    TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct2}hr 'hhZddmmmyyyy'`
+
+    cat ${Eta_ucl}/CTLTEMPLATE_3D |sed "s/NARQ/${Arqout}_3D.bin/g"  \
+    |sed "s/NTIME/1/g" \
+    |sed "s/LLTIME/${TIMEOUT}/g"|sed "s/INTHR/${IntFct3D}hr/g" > ${BIN_OUT3D}/${Arqout}_3D.ctl
+#${Eta_run}/gribeta ${Arqout} ${Hfct}
+
+    let NTIME=${Fct}/${IntFct3D}
+    let NTIME=${NTIME}+1
+    NTIME_3D=${NTIME}
+    TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + 0hr 'HHZDDMMMYYYY'`
+    cat ${Eta_ucl}/CTLTEMPLATE_3D |sed "s/NARQ/${NARQ}+%y4%m2%d2%h2_3D.bin/g"  \
+    |sed "s/NTIME/${NTIME}/g" \
+    |sed "s/LLTIME/${TIMEOUT}/g"|sed "s/INTHR/${IntFct3D}hr/g" > ${BIN_OUT3D}/${NARQ}_3D.ctl
+
+    chmod 755 ${BIN_OUT3D}/${Arqout}_3D.bin
+    chmod 755 ${BIN_OUT3D}/${Arqout}_3D.ctl
+    chmod 755 ${BIN_OUT3D}/${NARQ}_3D.ctl
+  fi
+  lgribUP=`echo ${lgrib}| tr '[:lower:]' '[:upper:]'`
+  if [ "${lgribUP}" == "TRUE" ] ; then
+### 2D grib files
+
+    ${gradsPath}/lats4d.sh -i ${BIN_OUT2D}/${NARQ}_2D.ctl -o \
+    ${GRIB_OUT2D}/${NARQ}+${TIMEOUT3}_2D -ftype ctl -format grads_grib \
+    -time ${TIMEOUT2} -table ${Eta_run}/cptec.table
+
+    ${gradsPath}/gribmap -i ${GRIB_OUT2D}/${NARQ}+${TIMEOUT3}_2D.ctl
+### Grib fixed fields
+    if [ "${Hfct2F}" == "000000" ] ; then
+      ${gradsPath}/lats4d.sh -i ${BIN_OUT2D}/${NARQ}_FF -o \
+      ${GRIB_OUT2D}/${NARQ}_FF -ftype ctl -format grads_grib \
+      -time ${TIMEOUT2} -table ${Eta_run}/cptec.table
+      ${gradsPath}/gribmap -i ${GRIB_OUT2D}/${NARQ}_FF.ctl
+    fi
+### 3D grib files
+
+    if [ -s ${BIN_OUT3D}/${Arqout}_3D.bin ] ; then
+
+      ${gradsPath}/lats4d.sh -i ${BIN_OUT3D}/${NARQ}_3D.ctl -o \
+      ${GRIB_OUT3D}/${NARQ}+${TIMEOUT3}_3D -ftype ctl -format grads_grib \
+      -time ${TIMEOUT2} -table ${Eta_run}/cptec.table
+
+      ${gradsPath}/gribmap -i ${GRIB_OUT3D}/${NARQ}+${TIMEOUT3}_3D.ctl
+
+    fi
+  fi
+
+  if [ "${lgribUP}" == "TRUE" ] ; then
+    if [ "${Hfct2F}" == "${FctF}" ] ; then
+      if [ -s ${GRIB_OUT2D}/${NARQ}+${Run_Date}_2D.ctl ] ; then
+        cat ${GRIB_OUT2D}/${NARQ}+${Run_Date}_2D.ctl                                   \
+        | sed -e "s:dset ^${NARQ}+${Run_Date}_2D.grb:dset ^${NARQ}+%y4%m2%d2%h2_2D.grb:g" \
+        | sed -e "s:index ^${NARQ}+${Run_Date}_2D.gmp:index ^${NARQ}_2D.idx:g"         \
+        | sed -e "s:tdef 1 linear:tdef ${NTIME_2D} linear:g"                           \
+        | sed "/grb/{p;s/.*/options template/;}" > ${GRIB_OUT2D}/${NARQ}_2D.ctl
+#
+        ${gradsPath}/gribmap -i ${GRIB_OUT2D}/${NARQ}_2D.ctl
+#
+        cat ${GRIB_OUT3D}/${NARQ}+${Run_Date}_3D.ctl                                      \
+        | sed -e "s:dset ^${NARQ}+${Run_Date}_3D.grb:dset ^${NARQ}+%y4%m2%d2%h2_3D.grb:g" \
+        | sed -e "s:index ^${NARQ}+${Run_Date}_3D.gmp:index ^${NARQ}_3D.idx:g"            \
+        | sed -e "s:tdef 1 linear:tdef ${NTIME_3D} linear:g"                              \
+        | sed "/grb/{p;s/.*/options template/;}" > ${GRIB_OUT3D}/${NARQ}_3D.ctl
+#
+        ${gradsPath}/gribmap -i ${GRIB_OUT3D}/${NARQ}_3D.ctl
+#
+        chmod -R 755 ${BIN_OUT2D}
+        chmod -R 755 ${BIN_OUT3D}
+        chmod -R 755 ${GRIB_OUT2D}
+        chmod -R 755 ${GRIB_OUT3D}
+      fi
+    fi
+  fi 
+
+# Submit Netcdf e Figuras
+  if [ "${Hfct2F}" == "000000" ] ; then
+    lnetcdfUP=`echo ${lnetcdf}| tr '[:lower:]' '[:upper:]'`
+    if [ "${lnetcdfUP}" == "TRUE" ] ; then
+      ${QSB} ${Eta_run}/submit_netcdf.sh 1>${Eta_run}/submit_netcdf.out &
+    fi 
+  fi
+else
+  mv ${Eta_run}/latlon_${Hfct2F} ${BIN_OUT}/${Arqout}.bin
+  TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct2}hr 'HHZDDMMMYYYY'`
+  TIMEOUT2=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct}hr 'hhZddmmmyyyy'`
+  TIMEOUT3=`${Eta_util}/caldate.3.0 ${Run_Date} + ${Hfct}hr 'yyyymmddhh'`
+
+  cat ${Eta_ucl}/CTLTEMPLATE_2D3D |sed "s/NARQ/${Arqout}.bin/g"  \
+  |sed "s/NTIME/1/g" \
+  |sed "s/LLTIME/${TIMEOUT2}/g"|sed "s/INTHR/${IntFct2D}hr/g" > ${BIN_OUT}/${Arqout}.ctl
+  chmod 755 ${BIN_OUT}/${Arqout}.*
+
+  let NTIME=${Fct}/${IntFct2D}
+  let NTIME=${NTIME}+1
+  
+  TIMEOUT=`${Eta_util}/caldate.3.0 ${Run_Date} + 0hr 'HHZDDMMMYYYY'`
+  cat ${Eta_ucl}/CTLTEMPLATE_2D3D |sed "s/NARQ/${NARQ}+%y4%m2%d2%h2.bin/g"  \
+  |sed "s/NTIME/${NTIME}/g" \
+  |sed "s/LLTIME/${TIMEOUT}/g"|sed "s/INTHR/${IntFct2D}hr/g" > ${BIN_OUT}/${NARQ}.ctl
+
+  chmod 755 ${BIN_OUT}/${Arqout}.bin
+  chmod 755 ${BIN_OUT}/${Arqout}.ctl
+  chmod 755 ${BIN_OUT}/${NARQ}.ctl
+  if [ "${Hfct2F}" == "000000" ] ; then
+    mv ${Eta_run}/topo_lsmsk.bin ${BIN_OUT}/${Arqout}_FF.bin
+    cat ${Eta_ucl}/CTLTEMPLATE_FIXED |sed "s/NARQ/${Arqout}_FF.bin/g"  \
+    |sed "s/NTIME/1/g" \
+    |sed "s/LLTIME/${TIMEOUT2}/g"|sed "s/INTHR/${IntFct2D}hr/g" > ${BIN_OUT}/${Arqout}_FF.ctl
+    chmod 755 ${BIN_OUT}/${Arqout}_FF.*
+  fi
+
+  lgribUP=`echo ${lgrib}| tr '[:lower:]' '[:upper:]'`
+  if [ "${lgribUP}" == "TRUE" ] ; then
+### 2D3D grib files
+
+    ${gradsPath}/lats4d.sh -i ${BIN_OUT}/${NARQ}.ctl -o \
+    ${GRIB_OUT}/${NARQ}+${TIMEOUT3} -ftype ctl -format grads_grib \
+    -time ${TIMEOUT2} -table ${Eta_run}/cptec.table
+
+    ${gradsPath}/gribmap -i ${GRIB_OUT}/${NARQ}+${TIMEOUT3}.ctl
+### Grib fixed fields
+    if [ "${Hfct2F}" == "000000" ] ; then
+      ${gradsPath}/lats4d.sh -i ${BIN_OUT}/${NARQ}_fixed -o \
+      ${GRIB_OUT}/${NARQ}_fixed -ftype ctl -format grads_grib \
+      -time ${TIMEOUT2} -table ${Eta_run}/cptec.table
+      ${gradsPath}/gribmap -i ${GRIB_OUT}/${NARQ}_fixed.ctl
+    fi
+  fi
+
+  if [ "${lgribUP}" == "TRUE" ] ; then
+    if [ "${Hfct}" == "${Fct}" ] ; then
+      if [ -s ${GRIB_OUT}/${NARQ}+${Run_Date}.ctl ] ; then
+        cat ${GRIB_OUT}/${NARQ}+${Run_Date}.ctl                                     \
+        | sed -e "s:dset ^${NARQ}+${Run_Date}.grb:dset ^${NARQ}+%y4%m2%d2%h2.grb:g" \
+        | sed -e "s:index ^${NARQ}+${Run_Date}.gmp:index ^${NARQ}.idx:g"            \
+        | sed -e "s:tdef 1 linear:tdef ${NTIME} linear:g"                           \
+        | sed "/grb/{p;s/.*/options template/;}" > ${GRIB_OUT}/${NARQ}.ctl
+#
+        ${gradsPath}/gribmap -i ${GRIB_OUT}/${NARQ}.ctl
+#
+        chmod -R 755 ${BIN_OUT}
+        chmod -R 755 ${GRIB_OUT}
+      fi
+    fi
+  fi
+fi
+# Limpeza 
+rm -f  LATLON${Hfct2F}.t00s
+rm -f  LATLONDONE${Hfct2F}.t00s
+printf "%s" "Pos processamento finalizado!"
+printf "%s" " "
+exit 0

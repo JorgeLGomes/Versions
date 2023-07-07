@@ -1,0 +1,1 @@
+    echo "${Dir_ETAwrk}/Submit_deco${tvalF}" >> ${Dir_ETAwrk}/Submit_deco.list

@@ -1,0 +1,15 @@
+ &SSTGRD_IN
+  INCR_LAT= 0.250            ,
+  INCR_LON= 0.250            ,
+  NX= 1440                   ,
+  NY= 720                    ,
+  LAT_1 = -90.0000           ,
+  LON_1 = 0.0000             ,
+  LAT_NY = 89.7500           ,
+  LON_NX = 359.750           ,
+  SMOOT= .false.             ,
+  NSMOOT= 4                  ,
+  FILE_ACCESS="DIRECT"       ,
+  YREV= .false.              ,
+  UNDEF = 9.999000261E+20
+ &END

@@ -1,0 +1,13 @@
+cat <<EOF> ${Dir_scr}/Submit_deco.list
+#!/bin/bash -x
+#PBS -j oe
+#PBS -l nodes=1:ncpus=1
+#PBS -l walltime=04:50:00
+#PBS -q pesq
+#PBS -V
+#PBS -N CFS2Eta
+#PBS -o CFS_ETAwrk.out
+######################
+
+EOF
+

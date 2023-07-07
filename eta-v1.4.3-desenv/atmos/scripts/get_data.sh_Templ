@@ -1,0 +1,101 @@
+#!/bin/bash   
+#
+#
+FctIni=${1}
+FctEnd=${2}
+fpref=${3}
+FctIniF=`printf "%06d" "${FctIni}"`
+FctEndF=`printf "%06d" "${FctEnd}"`
+# VARIAVEIS
+
+cd ${Eta_run}
+
+if  [ "${TInitBC}" == "0" ] && [ "${FctIniF}" != "000000" ]  ; then    
+   Run_Date=`${Eta_util}/caldate.3.0 ${Run_Date} - ${HInitBC}hr 'yyyymmddhh'`
+   let FctEnd=${FctEnd}+${HInitBC}
+   let FctCont3=${FctIni}+${HInitBC}
+   let FctCont6=${FctIni}+${HInitBC}
+   FctEndF=`printf "%06d" "${FctEnd}"`
+   FctCont3F=`printf "%03d" "${FctCont3}"`
+   FctCont6F=`printf "%06d" "${FctCont6}"`
+else 
+   FctCont3=${FctIni}
+   FctCont6=${FctIni}
+   FctCont3F=`printf "%03d" "${FctCont3}"`
+   FctCont6F=`printf "%06d" "${FctCont6}"`
+fi
+format1="%38s %-15s %-7s %-10s\n"
+if [ "${FctIniF}" = "000000" ] ; then
+   printf "$format1" "Drive model of the initial condition:" "${fpref}" "DATA:" "${Run_Date}"
+else
+   printf "$format1"  "Drive model of the boundary condition:" "${fpref}" "DATA:"  "${Run_Date}"
+fi
+yyyy=`echo ${Run_Date} | cut -c1-4`
+mm=`echo ${Run_Date} | cut -c5-6`
+dd=`echo ${Run_Date} | cut -c7-8`
+hh=`echo ${Run_Date} | cut -c9-10`
+yyyymmdd=`echo ${Run_Date} | cut -c1-8`
+
+hh2=${hh}
+FctCont2=${FctIni}
+GlobalOK="False"
+First=1
+idate1=${Run_Date}
+if [ "${TypRun}" = "forecast" ] ; then
+  cont=0
+  while [ "${GlobalOK}" != "True" ] ; do
+    data_grib=${datain}/atmos/ETAwrk/${fpref}/${Run_Date}
+    arqin=${data_grib}/${fpref}'_'${Run_Date}'.'${FctCont6F}.ETAwrk
+    if [ -s ${arqin} ] ; then
+       echo "ARQ1"$arqin >> ${Eta_run}/cond$Run_Date
+       ln -sf ${arqin} ${Eta_run}/.
+       ln -sf ${arqin}.gdsinfo ${Eta_run}/.
+       cont=0
+       if [ "${FctCont6F}" == "${FctEndF}" ] ; then
+         GlobalOK="True"
+         exit 0
+       fi
+       let FctCont6=${FctCont6}+${InitBC}
+       let FctCont3=${FctCont3}+${InitBC}
+       FctCont3F=`printf "%03d" "${FctCont3}"`
+       FctCont6F=`printf "%06d" "${FctCont6}"`
+    else
+      echo "Waiting for ${arqin}"
+      sleep 5
+      let cont=$cont+1
+      if ((${cont}>=100)); then
+         echo "cont1"=$cont
+         exit 1
+      fi
+    fi
+  done
+else #Simulation
+  cont=0
+  while [ "${GlobalOK}" != "True" ] ; do
+    if [ "${FctIniF}" != "000000" ]  ; then    
+      Run_Date=`${Eta_util}/caldate.3.0 ${Run_Date} + ${InitBC}hr 'yyyymmddhh'`
+    fi
+    data_grib=${datain}/atmos/ETAwrk/${fpref}/${Run_Date}
+    arqin=${data_grib}/${fpref}'_'${Run_Date}'.000000.ETAwrk'
+    if [ -s ${arqin} ] ; then
+      echo "ARQ1"$arqin >> ${Eta_run}/cond$Run_Date
+      ln -sf ${arqin} ${Eta_run}/.
+      ln -sf ${arqin}.gdsinfo ${Eta_run}/.
+      cont=0
+      if [ "${FctCont6F}" == "${FctEndF}" ] ; then
+         GlobalOK="True"
+         exit 0
+      fi
+      let FctCont6=${FctCont6}+${InitBC}
+      FctCont6F=`printf "%06d" "${FctCont6}"`
+    else
+      echo "Waiting for ${arqin}"
+      sleep 5
+      let cont=$cont+1
+      if ((${cont}>=100)); then
+        echo "cont1"=$cont
+        exit 1
+      fi
+    fi
+  done
+fi

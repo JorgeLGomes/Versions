@@ -1,0 +1,9 @@
+FC= ftn 
+CC= /lib/cpp -traditional-cpp
+FFLAGS=  -dynamic -mcmodel=medium -Mlarge_arrays
+#CFLAGS= 
+CFLAGS= -mcmodel=medium -Mlarge_arrays
+CFLAGS= 
+#CPP= pgcc
+CPP= pgcc -mcmodel=medium -Mlarge_arrays
+# ----------------------------------

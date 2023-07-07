@@ -1,0 +1,233 @@
+#!/bin/bash 
+
+
+# VARIAVEIS
+
+
+cd ${Eta_run}
+
+# head is used for symbolic links.  
+# head="ftn" for HP workstations
+# head="fort." for most (all?) others.
+
+head="fort."
+rm -f ${head}*
+
+EINTLM0D=`cat ${Eta_run}/ETAIN | grep TLM0D | cut -d= -f2`
+EINTPH0D=`cat ${Eta_run}/ETAIN | grep TPH0D | cut -d= -f2`
+EINIM=`cat ${Eta_run}/ETAIN    | grep "IM=" | cut -d= -f2 | head -1`
+EINJM=`cat ${Eta_run}/ETAIN    | grep "JM=" | cut -d= -f2`
+EINLM=`cat ${Eta_run}/ETAIN    | grep "LM=" | cut -d= -f2`
+EINDLMD=`cat  ${Eta_run}/ETAIN | grep DLMD  | cut -d= -f2`
+EINDPHD=`cat  ${Eta_run}/ETAIN | grep DPHD  | cut -d= -f2`
+
+echo "Starting eta topography creation..."
+
+#### get the proper sea mask data uncompressed
+
+if [ "${topo}" = "1km" ] ; then
+  data_topo=${Eta_static}/eta/static/topo
+  cp ${Eta_src}/prep/smask/smask_select.f ${Eta_run}/smask_select.f
+  cp ${Eta_exe}/select.x                  ${Eta_run}
+  
+  ExecCmd1P ${Eta_run}/select.x
+  
+  first=`head -1 tmp.smask`
+  last=`tail -1 tmp.smask`
+  tiles="01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 \
+         20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36"
+  for tl in $tiles
+  do
+    if [ $tl -ge $first ]
+    then
+      if [ $tl -le $last ]
+      then
+        if [ ! -s smask.30s.$tl ]
+        then
+          echo "processing strip number " $tl
+          cp ${Eta_fix}/smasks_30s/smask.30s.${tl}.Z .
+          gzip -d  smask.30s.${tl}.Z
+        fi
+      fi
+    fi
+  done
+  # ***** T O P O ************
+  ExecCmd1P ${Eta_exe}/etatopo.exe > topo.out
+  err=$?
+  if [ $err -ne 0 ] ; then
+    echo "FALHA NA TOPOGRAFIA VERIFICAR O ARQUIVO /exe/etatopo.exe !!!!!!!!!!"
+    exit 1
+  fi
+else
+  if [ "${topo}" = "90m" ] 
+  then
+    data_topo=/lustre_xc50/preio/tempo/worketa/fixos/static/topo90m
+    cp ${Eta_src}/prep/smask/smask_select_3s.f   ${Eta_run}/smask_select_3s.f
+    cp ${Eta_exe}/select_3s.x                    ${Eta_run}
+
+    ExecCmd1P ${Eta_run}/select_3s.x
+
+    # ***** T O P O ************
+    ExecCmd1P ${Eta_exe}/etatopo_3s.exe > topo.out
+    err=$?
+    if [ $err -ne 0 ] ; then
+      echo "FALHA NA TOPOGRAFIA VERIFICAR O ARQUIVO /exe/etatopo_3s.exe !!!!!!!!!!"
+      exit 1
+    fi
+  fi
+fi
+vegflagUP=`echo ${vegflag}| tr '[:lower:]' '[:upper:]'`
+if [ "${vegflagUP}" = ".TRUE." ] ; then
+  echo "Starting eta vegetation map creation..."
+  ln -s -f   ${Eta_fix_conf}/etatopo.dat                    ${head}10
+  ln -s -f   ${data_veg}/ESACCI_1km_reclass_amz_2000.asc   ${head}20
+  ln -s -f   ${Eta_fix_conf}/vegmask2d_umd_proveg_radam.bin ${head}31
+  ln -s -f   ${Eta_fix_conf}/vegmask1d_umd_proveg_radam.bin ${head}32
+  ln -s -f   ${Eta_run}/vegsample.txt                      ${head}65
+  
+  ExecCmd1P ${Eta_exe}/vegmsk_Eta_Atlantico_16classes.x > ${Eta_run}/out_skveg
+
+  err=$?
+  if [ $err -ne 0 ] ; then
+    echo "FALHA NA VEGETACAO VERIFICAR O ARQUIVO Eta_run/vegmsk.x !!!!!!!!!"
+    exit 1
+  fi
+fi
+
+### NEWSOIL
+echo "newsoil" ${newsoil}
+if [ "${qtdtypsolo}" == "18" ] ; then
+  echo "Starting eta soil map creation..."
+  ln -s -f   ${Eta_fix_conf}/etatopo.dat                   ${head}10
+  ln -s -f   ${data_soilp}/mapa_suelos18_1km.dat          ${head}33
+  ln -s -f   ${Eta_fix_conf}/SA_18SoilTypes_map_1km_2d.bin ${head}31
+  ln -s -f   ${Eta_fix_conf}/SA_18SoilTypes_map_1km_1d.bin ${head}32
+
+  ExecCmd1P ${Eta_exe}/newsoil.x > ${Eta_run}/out_newsoil
+  err=$?
+  if [ $err -ne 0 ] ; then
+    echo "FALHA NO NEWSOIL VERIFICAR O ARQUIVO Eta_run/newsoil.x !!!!!!!!!"
+    exit 1
+  fi
+  chmod 775 ${Eta_fix_conf}/SA_18SoilTypes_map_1km_2d.bin
+  chmod 775 ${Eta_fix_conf}/SA_18SoilTypes_map_1km_1d.bin
+  cp ${Eta_fix_conf}/SA_18SoilTypes_map_1km_2d.bin     ${Eta_run}/SoilMap_1km_2d.bin
+fi
+
+### NEWGLOBALSOIL
+if [ "${qtdtypsolo}" == "15" ] ; then
+  echo "Starting eta soil map creation..."
+  ln -s -f   ${Eta_fix_conf}/etatopo.dat                       ${head}10
+  ln -s -f   ${data_soilp}/global_soil_map_1km_FAO.dat        ${head}33
+  ln -s -f   ${Eta_fix_conf}/Global_15SoilTypes_map_1km_2d.bin ${head}31
+  ln -s -f   ${Eta_fix_conf}/Global_15SoilTypes_map_1km_1d.bin ${head}32
+  
+  ExecCmd1P ${Eta_exe}/newglobalsoil.x > ${Eta_run}/out_newglobalsoil
+
+  err=$?
+  if [ $err -ne 0 ] ; then
+    echo "FALHA NO NEWSOIL VERIFICAR O ARQUIVO Eta_run/newglobalsoil.x !!!!!!!!!"
+    exit 1
+  fi
+  chmod 775 ${Eta_fix_conf}/Global_15SoilTypes_map_1km_2d.bin
+  chmod 775 ${Eta_fix_conf}/Global_15SoilTypes_map_1km_1d.bin
+  cp ${Eta_fix_conf}/Global_15SoilTypes_map_1km_2d.bin ${Eta_run}/SoilMap_1km_2d.bin
+fi
+
+## GERANDO O VGREEN
+  echo "Starting eta vgreen map creation..."
+  ln -s -f  ${Eta_fix_conf}/etatopo.dat            ${Eta_run}/${head}10
+  ln -s -f  ${data_veg}/FCOVER_rec_1999-2014.bin   ${Eta_run}/FCOVER.bin 
+
+  ExecCmd1P ${Eta_exe}/vgreen.x > ${Eta_run}/vgreen.out
+######################
+
+cp ${Eta_run}/ZEFF ${Eta_fix_conf}/.
+cp ${Eta_run}/VGREEN_12MO.dat ${Eta_fix_conf}/.
+################################################################################
+cp ${Eta_fix}/rad_files/co2_SGTMP_L${LM}_${co2TransCoef}_AllGHGs.bin  \
+${Eta_run}/co2_SGTMP_cluster.bin
+#
+cp ${Eta_fix}/rad_files/co2_DATA_L${LM}_${co2TransCoef}_AllGHGs.bin   \
+${Eta_run}/co2_DATA_cluster.bin
+#
+cp ${Eta_fix}/rad_files/co2_CO21D_L${LM}_${co2TransCoef}_AllGHGs.bin  \
+${Eta_run}/co2_CO21D_cluster.bin
+#
+cp ${Eta_fix}/rad_files/co2_CO21D3_L${LM}_${co2TransCoef}_AllGHGs.bin \
+${Eta_run}/co2_CO21D3_cluster.bin
+#
+cp ${Eta_fix}/rad_files/co2_CO21D7_L${LM}_${co2TransCoef}_AllGHGs.bin \
+${Eta_run}/co2_CO21D7_cluster.bin
+################################################################################
+cp ${Eta_fix}/rad_files/co2_SGTMP_L${LM}_${co2TransCoef}_AllGHGs.bin  \
+${Eta_fix_conf}/co2_SGTMP_L${LM}_${co2TransCoef}_AllGHGs.bin
+#
+cp ${Eta_fix}/rad_files/co2_DATA_L${LM}_${co2TransCoef}_AllGHGs.bin   \
+${Eta_fix_conf}/co2_DATA_L${LM}_${co2TransCoef}_AllGHGs.bin
+#
+cp ${Eta_fix}/rad_files/co2_CO21D_L${LM}_${co2TransCoef}_AllGHGs.bin  \
+${Eta_fix_conf}/co2_CO21D_L${LM}_${co2TransCoef}_AllGHGs.bin
+#
+cp ${Eta_fix}/rad_files/co2_CO21D3_L${LM}_${co2TransCoef}_AllGHGs.bin \
+${Eta_fix_conf}/co2_CO21D3_L${LM}_${co2TransCoef}_AllGHGs.bin
+#
+cp ${Eta_fix}/rad_files/co2_CO21D7_L${LM}_${co2TransCoef}_AllGHGs.bin \
+${Eta_fix_conf}/co2_CO21D7_L${LM}_${co2TransCoef}_AllGHGs.bin
+################################################################################
+#
+cp ${Eta_fix}/rad_files/co2.${LM}_${PT}mb_414ppm              \
+${Eta_run}/CO2.dat
+cp ${Eta_fix}/rad_files/co2.${LM}_${PT}mb_414ppm              \
+${Eta_fix_conf}/co2.${LM}_${PT}mb_414ppm
+#
+cp ${Eta_fix}/rad_files/co2.${LM}_${PT}mb_330ppm              \
+${Eta_fix_conf}/co2.${LM}_${PT}mb_330ppm
+#
+cp ${Eta_fix}/deta_files/deta_${LM}                            \
+${Eta_fix_conf}/deta
+cp ${Eta_fix}/deta_files/deta_${LM}                            \
+${Eta_run}/deta
+################################################################################
+
+
+# Atualiza o arquivo CONF
+echo "Lon "${EINTLM0D} >${Eta_scr}/CONF
+echo "Lat "${EINTPH0D} >>${Eta_scr}/CONF
+echo "IM "${EINIM} >>${Eta_scr}/CONF
+echo "JM "${EINJM}  >>${Eta_scr}/CONF
+echo "LM "${EINLM} >>${Eta_scr}/CONF
+echo "DLMD "${EINDLMD} >>${Eta_scr}/CONF
+echo "DPHD "${EINDPHD}  >>${Eta_scr}/CONF
+echo "Res "${Res} >>${Eta_scr}/CONF
+echo "Fctexec "${Fctexec} >>${Eta_scr}/CONF
+echo "LabRod "${LabRod} >>${Eta_scr}/CONF
+echo "Conf "${Conf} >>${Eta_scr}/CONF 
+echo "Fct "${Fct} >>${Eta_scr}/CONF
+echo "IntFct "${IntFct} >>${Eta_scr}/CONF
+echo "FInitBC "${FInitBC} >>${Eta_scr}/CONF
+echo "InitBC "${InitBC} >>${Eta_scr}/CONF
+echo "TInitBC "${TInitBC} >>${Eta_scr}/CONF
+exit 0
+# *****************
+err=$?
+if [ $err -eq 0 ]
+then
+  echo " "
+  echo Starting eta initialization and bc file creation...
+  if [ -s ${Eta_run}/snowdepth.grb ]
+  then
+    echo "appear to have surface files"
+  else
+    echo "didnt find snow file...running get_sfcfields.com"
+    ../scripts/get_sfcfields.com
+  fi
+  err=$?
+  echo value of err is $err 
+  if [ $err -ne 0 ] ; then
+    echo "FALHA!!!!!!! VERIFICAR NO ARQUIVO /exe/initbc.exe"
+    exit 1
+  fi
+fi
+
+exit 0

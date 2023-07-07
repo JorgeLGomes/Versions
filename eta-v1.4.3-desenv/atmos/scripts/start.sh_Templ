@@ -1,0 +1,386 @@
+#!/bin/bash 
+#
+# Verifica se foi passado algum parametro
+export hh=${1}
+if (($#<3)) ; then
+  export Run_Date=`date "+%Y%m%d"`${hh}
+  restrt='COLD'
+  Fcst2restrt=0
+elif (($#<4)) ; then 
+  export Run_Date=${3}${hh}
+  restrt='COLD'
+  Fcst2restrt=0
+else
+  export Run_Date=${3}${hh}
+  restrt=${4}
+  Fcst2restrt=${5}
+fi
+export Cnfg=${2}
+restrt=`echo ${restrt}| tr '[:lower:]' '[:upper:]'`
+#
+#INCLUI os diretorios de scripts e de saida 
+####################################################################################### 
+#
+source ${Eta_home_conf}/scripts/ConfigRun_${Cnfg}
+#
+####################################################################################### 
+# Label da rodada
+ResChar2Dig=`printf "%02d" "${Res}"`
+LabRod="Eta${ResChar2Dig}_${Exp}_"
+####################################################################################### 
+Eta_dprep=${datain}/dprep
+Eta_run=${Eta_run_output}/${LabRod}${Run_Date}
+Eta_scr=${Eta_home_conf}/scripts
+Eta_output=${Eta_output}
+Eta_ucl=${Eta_home_conf}/ucl
+Eta_Templ=${Eta_home_conf}/template
+Eta_scr_out=${Eta_scr}/output/${LabRod}${Run_Date}
+####################################################################################### 
+# Make scr output dir
+mkdir -p ${Eta_run}/OUT2RESTRT
+mkdir -p ${Eta_run}/netcdf_temp
+mkdir -p ${Eta_scr}/relatorios
+mkdir -p ${Eta_scr_out}
+mkdir -p ${Eta_run}/outjob
+
+####################################################################################### 
+# Number of Model run cores
+let NCORE=${npr}+${npio_server}+${npio_server_groups}
+####################################################################################### 
+
+cd ${Eta_scr}
+
+cat << EOF > ${Eta_scr_out}/SetVarModelPrep
+export Run_Date=${Run_Date}
+export Eta_home=${Eta_home}
+export Eta_static=${Eta_support}/static
+export Eta_home_conf=${Eta_home_conf}
+export Eta_run_output=${Eta_run_output}
+export Eta_scr=\${Eta_home_conf}/scripts
+export Eta_scr_out=${Eta_scr_out}
+export Eta_run=${Eta_run}
+export Eta_preproc_cp=\${Eta_run_output}/${preproc_cp}${Run_Date}
+export Eta_ucl=${Eta_ucl}
+export Eta_fix=\${Eta_static}/fix
+export Eta_fix_conf=${Eta_home_conf}/fix
+export Eta_util=${Eta_support}/util
+export Eta_src=${Eta_home}/src
+export Eta_exe=\${Eta_home_conf}/exe
+export Eta_dprep_exe=${Eta_dprep}/exe
+export datain=${datain}
+export Eta_grb=\${Eta_home_conf}/grb
+export data_prep=\${Eta_run}
+export data_topo=\${Eta_static}/topo
+export data_soilp=\${Eta_static}/newsoil
+export data_veg=\${Eta_static}/veg
+export Eta_datain=\${Eta_home_conf}/datain
+export Eta_conf=\${Eta_home_conf}/configuracao
+export Lon=${Lon} 
+export Lat=${Lat}
+export IM=${IM}
+export JM=${JM}
+export LM=${LM}
+export LSM=${LSM}
+export PT=${PT}
+export Res=${Res}
+export resol=${resol}
+export InitBCexec=${InitBCexec} 
+export Exp=${Exp}
+export LabRod=${LabRod} 
+export Conf=${Conf}
+export cucnvcflg=${cucnvcflg}
+export cucnvcsqm=${cucnvcsqm}
+export microphyssqm=${microphyssqm}
+export rhgrdl=${rhgrdl}
+export rhgrds=${rhgrds}
+export vsowadst=${vsowadst}
+export shlcnvcflg=${shlcnvcflg}
+export shlcnvcsqm=${shlcnvcsqm}
+export Fct=${Fct}
+export Fcst2restrt=${Fcst2restrt}
+export restrt=${restrt}         
+export postout=${postout}
+export IntFct=${IntFct}
+export IntFct3D=${IntFct3D}
+export CInit=${CInit}
+export BCond=${BCond}
+export InitBC=${InitBC}
+export TInitBC=${TInitBC}
+export HInitBC=${HInitBC}
+export IntPhisAcum=${IntPhisAcum}
+export run_preproc=${run_preproc}
+export run_process_grib=${run_process_grib}
+export TypRun=${TypRun}
+export slope=${slope}
+export vegflag=${vegflag}
+export sstflg=${sstflg}
+export sstmnthly=${sstmnthly}
+export sstsource=${sstsource}
+export sstres=${sstres}
+export sstYYYY=${sstYYYY}
+export sstMM=${sstMM}
+export sstDD=${sstDD}
+export co2flg=${co2flg}
+export co2ramp=${co2ramp}
+export co2TransCoef=${co2TransCoef}
+export co2ppm=${co2ppm}
+export coac=${coac}
+export lcoac=${lcoac}
+export ntddmp=${ntddmp}
+export soilmoist=${soilmoist}
+export newglobalsoil=${newglobalsoil}
+export qtdtypsolo=${qtdtypsolo}
+export writeout2restrt=${writeout2restrt}         
+export freqout2restrt=${freqout2restrt}
+export lddampflg=${lddampflg}         
+export lfcttimchk=${lfcttimchk}
+export topo=${topo}
+export prop1=${prop1}
+export prop2=${prop2}
+export prop3=${prop3}
+export prop4=${prop4}
+export MACHINE=${MACHINE}
+export lfig=${lfig}
+export QSB=${QSB}
+export QUE1=${QUE1}
+export QUE2=${QUE2}
+EOF
+################################################################################
+cat << EOF > ${Eta_scr_out}/SetVarModel
+export Run_Date=${Run_Date}
+export Eta_home=${Eta_home}
+export Eta_static=${Eta_support}/static
+export Eta_home_conf=${Eta_home_conf}
+export Eta_run_output=${Eta_run_output}
+export Eta_scr=\${Eta_home_conf}/scripts
+export Eta_scr_out=${Eta_scr_out}
+export Eta_util=${Eta_support}/util
+export Eta_run=${Eta_run}
+export Eta_ucl=${Eta_ucl}
+export Eta_fix=\${Eta_static}/fix
+export Eta_fix_conf=${Eta_home_conf}/fix
+export Eta_exe=\${Eta_home_conf}/exe
+export dprep_exe=${Eta_dprep}/exe
+export data_prep=\${Eta_run}
+export Lon=${Lon} 
+export Lat=${Lat}
+export IM=${IM}
+export JM=${JM}
+export LM=${LM}
+export LSM=${LSM}
+export PT=${PT}
+export Res=${Res}
+export resol=${resol}
+export LabRod=${LabRod} 
+export Conf=${Conf}
+export Fctexec=${Fctexec} 
+export npr=${npr}
+export npio_server_groups=${npio_server_groups} 
+export npio_server=${npio_server}
+export Fct=${Fct}
+export Fcst2restrt=${Fcst2restrt}
+export restrt=${restrt}         
+export InitBC=${InitBC}
+export cuparm=${cuparm}
+export MACHINE=${MACHINE}
+export QSB=${QSB}
+export QUE1=${QUE1}
+export QUE2=${QUE2}
+EOF
+################################################################################
+cat << EOF > ${Eta_scr_out}/SetVarModelPos
+export Run_Date=${Run_Date}
+export Eta_home=${Eta_home}
+export Eta_static=${Eta_support}/static
+export Eta_home_conf=${Eta_home_conf}
+export Eta_run_output=${Eta_run_output}
+export Eta_output=${Eta_output}
+export Exp=${Exp}
+export LabRod=${LabRod} 
+export Conf=${Conf}
+export Cnfg=${Cnfg}
+export Res=${Res}
+export resol=${resol}
+export EtaPostexec=${EtaPostexec} 
+export Reformexec=${Reformexec}
+export Eta_scr=\${Eta_home_conf}/scripts
+export Eta_scr_out=${Eta_scr_out}
+export Eta_util=${Eta_support}/util
+export Eta_run=${Eta_run}
+export Eta_binctl=\${Eta_output}/binctl/${Run_Date}/${Exp}
+export Eta_grbctl=\${Eta_output}/grbctl/${Run_Date}/${Exp}
+export Eta_netcdf=\${Eta_output}/netcdf/${Run_Date}/${Exp}
+export Eta_indsev=\${Eta_output}/indsev/${Run_Date}/${Exp}
+export Eta_postfig=\${Eta_output}/postfig/${Run_Date}/${Exp}
+export Eta_exe=\${Eta_home_conf}/exe
+export Eta_ucl=${Eta_ucl}
+export postout=${postout}
+export Fct=${Fct}
+export Fcts=0
+export Fcst2restrt=${Fcst2restrt}
+export restrt=${restrt}         
+export IntFct=${IntFct}
+export IntFct3D=${IntFct3D}
+export InitBC=${InitBC}
+export IntPhisAcum=${IntPhisAcum}
+export Split2D3D=${Split2D3D}
+export MACHINE=${MACHINE}
+export QSB=${QSB}
+export QUE1=${QUE1}
+export QUE2=${QUE2}
+export lgrib=${lgrib}
+export lnetcdf=${lnetcdf}
+export lfig=${lfig}
+export cdoPath=${cdoPath}
+export gradsPath=${gradsPath}
+EOF
+################################################################################
+printf "%b\n" "Starting...."
+#
+if [ ${run_preproc} == "yes" ] && [ ${restrt} == COLD ] ; then
+################################################################################
+# sst
+#
+cat ${Eta_scr}/get_sst_data.sh_Templ                                \
+                | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep" \
+                > ${Eta_run}/get_sst.sh
+                cat ${Eta_scr}/Eta_sst.sh_Templ                     \
+                | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep" \
+                > ${Eta_run}/Eta_sst.sh
+                chmod 755 ${Eta_run}/get_sst.sh
+                chmod 755  ${Eta_run}/Eta_sst.sh
+                ${Eta_run}/get_sst.sh
+if [ $?  == 1 ] ; then
+  echo "SST not found"
+  exit 1
+fi
+
+################################################################################
+# ic and bc for the specified model driver
+# ic
+cat ${Eta_scr}/get_data.sh_Templ                                   \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep" \
+                > ${Eta_run}/get_data_ic.sh
+                chmod 755 ${Eta_run}/get_data_ic.sh 
+		${Eta_run}/get_data_ic.sh 0 0 ${CInit}
+if [ $?  == 1 ] ; then
+  echo "Initial Condition file not found!"
+  echo "Check directory:"
+  echo " ${datain}/atmos/${CInit}/${Eta_run}"
+  exit 1
+fi
+
+# bc
+cat ${Eta_scr}/get_data.sh_Templ                                    \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep"  \
+               > ${Eta_run}/get_data_cc.sh
+	       chmod 755 ${Eta_run}/get_data_cc.sh 
+	       ${Eta_run}/get_data_cc.sh ${InitBC} ${Fct} ${BCond}
+if [ $?  == 1 ] ; then
+  echo "Boundary Condition file not found!"
+  echo "Check directory:"
+  echo " ${datain}/atmos/${BCond}/${Eta_run}"
+  exit 1
+fi
+
+################################################################################
+echo ${Run_Date:2:8} > ${Eta_run}/adate.txt
+fi
+#
+################################################################################
+#
+cat ${Eta_scr}/main.sh_Templ                                        \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep"  \
+               > ${Eta_run}/EtaP_Main.sh
+#
+cat ${Eta_scr}/Eta_fix.sh_Templ                                     \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep"  \
+               > ${Eta_run}/Eta_fix.sh
+#
+cat ${Eta_scr}/new_prep.sh_Templ                                    \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPrep"  \
+               > ${Eta_run}/new_prep.sh
+#
+cat ${Eta_scr}/run.com_real_mpi_Templ                               \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModel"      \
+               | sed -e "s:NCORE:${NCORE}:g"                        \
+               | sed -e "s:FQNAME:"${Exp}F${Run_Date}":g"           \
+               | sed -e "s:QFNAME:${QUE2}:g"                        \
+               > ${Eta_run}/EtaFcst.sh      
+#
+cat ${Eta_scr}/Clean2Save.sh_Templ                                  \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModel"      \
+               > ${Eta_run}/Clean2Save.sh
+#
+cat ${Eta_scr}/outjob_special_Templ                                 \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"   \
+               > ${Eta_run}/outjob_special
+#
+cat ${Eta_scr}/outjob_special_prof_Templ                            \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"   \
+               > ${Eta_run}/outjob_special_prof
+#
+cat ${Eta_scr}/outjob_special.sh_Templ                              \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"   \
+               | sed -e "s:QFNAME:${QUE2}:g"                        \
+               > ${Eta_run}/outjob_special.sh
+#
+cat ${Eta_scr}/Finaliza_${postout}.sh_Templ                         \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"   \
+               > ${Eta_run}/Finaliza.sh 
+#
+cat ${Eta_scr}/SubmitPos.sh_Templ                                   \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"   \
+               | sed -e "s:SPNAME:"SP_${Exp}_${Run_Date:2:8}":g"    \
+               | sed -e "s:QFNAME:${QUE1}:g"                        \
+               > ${Eta_run}/SPos${Run_Date}.sh
+################################################################################
+# FIGURAS 
+cp -R ${Eta_home_conf}/Figuras   ${Eta_run}/.
+cat ${Eta_run}/Figuras/gera_figuras_diagnostico_EtaTempo_2D3D.sh       \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"      \
+               | sed -e "s:_EXPER:${Exp}:g"                            \
+               > ${Eta_run}/Figuras/gera_FigDiag_EtaTempo_2D3D.sh
+#
+cat ${Eta_run}/Figuras/submit_figuras.sh                               \
+               | sed -e "s:_Etarun:${Eta_run}:g"                       \
+               | sed -e "s:QFNAME:${QUE1}:g"                           \
+               | sed -e "s:_RunDate:${Run_Date}:g"                     \
+	       > ${Eta_run}/Figuras/submit_figuras.sh
+#
+################################################################################
+# NetCDF
+cat ${Eta_scr}/Gera_NC_netcdf.sh_Templ                              \
+               | sed "/VARIAVEIS/r ${Eta_scr_out}/SetVarModelPos"   \
+               | sed -e "s:_EXPER:${Exp}:g"                         \
+               > ${Eta_run}/Gera_NC_netcdf.sh
+#
+cat ${Eta_scr}/submit_netcdf.sh_Templ                               \
+               | sed -e "s:_Etarun:${Eta_run}:g"                    \
+               | sed -e "s:QFNAME:${QUE1}:g"                        \
+               | sed -e "s:_RunDate:${Run_Date}:g"                  \
+               > ${Eta_run}/submit_netcdf.sh
+#
+################################################################################
+#
+chmod 755 ${Eta_run}/EtaP_Main.sh
+chmod 755 ${Eta_run}/Eta_fix.sh
+chmod 755 ${Eta_run}/new_prep.sh
+chmod 755 ${Eta_run}/EtaFcst.sh      
+chmod 755 ${Eta_run}/Clean2Save.sh
+chmod 755 ${Eta_run}/outjob_special
+chmod 755 ${Eta_run}/outjob_special_prof
+chmod 755 ${Eta_run}/outjob_special.sh
+chmod 755 ${Eta_run}/Finaliza.sh
+chmod 755 ${Eta_run}/SPos${Run_Date}.sh
+chmod 755 ${Eta_run}/Figuras/gera_FigDiag_EtaTempo_2D3D.sh
+chmod 755 ${Eta_run}/Figuras/submit_figuras.sh
+chmod 755 ${Eta_run}/Gera_NC_netcdf.sh
+chmod 755 ${Eta_run}/submit_netcdf.sh
+################################################################################
+cd ${Eta_run}
+${Eta_run}/EtaP_Main.sh
+################################################################################
+echo "   DIRRUN: ${Eta_run}"
+echo "DIRBINCTL: ${Eta_output}/binctl/${Run_Date}/${Exp}"
+exit 0

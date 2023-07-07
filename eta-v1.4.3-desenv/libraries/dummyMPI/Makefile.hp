@@ -1,0 +1,22 @@
+# Makefile for MPI dummy library. 
+
+MACHINE = -DIBM
+
+libmpi.a: mpi_dummy.o mpi_dummy_c.o wtime.o
+	ar r libmpi.a mpi_dummy.o mpi_dummy_c.o wtime.o
+
+mpi_dummy.o: mpi_dummy.f mpif.h
+	f90 -O -c mpi_dummy.f
+
+mpi_dummy_c.o: mpi_dummy.c mpi.h
+	cc -c -Aa -Ae ${MACHINE} -o mpi_dummy_c.o mpi_dummy.c
+
+wtime.o: wtime.c
+	cc -c -Aa -Ae ${MACHINE} wtime.c
+
+test: test.f
+	f90 -o test -I. test.f -L. -lmpi
+
+clean: 
+	- rm -f *~ *.o
+	- rm -f test libmpi.a

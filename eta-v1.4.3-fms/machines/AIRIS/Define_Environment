@@ -1,0 +1,20 @@
+QSB="/usr/bin/qsub"
+#
+ExecCmd1P="mpirun -np 1"
+ExecCmdNPP="mpirun -np NCPUS"
+ExecCmdNPF="mpirun -np \${npr}"
+# 
+export QUE1="processing"
+#
+# etafcst
+export QUE2="processing"
+export NCpusNode=40
+#
+# etapost
+export QUE3="processing"
+export NNodesPos=1
+export NCpusNodePos=1
+#
+export cdoPath="/lustre_xc50/manoel_baptista/modules/software/cdo-1.9.6/bin"
+export gradsPath="/lustre_xc50/jorge_gomes/Eta_support_data/util/grads/2.1.a1/bin"
+export DIRSUPPORT=/home/jorge.gomes/eta-v1.4.3-desenv/Eta_support_data

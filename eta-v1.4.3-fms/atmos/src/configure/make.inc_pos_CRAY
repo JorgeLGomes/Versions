@@ -1,0 +1,12 @@
+FC= ftn 
+CC= /lib/cpp -traditional-cpp
+FFLAGS=  -craype-verbose -O0 -eZm -e0Z -Rb -rm -J  ./ 
+FFLAGS=  -h dynamic -h pic -O0 -eZm -e0Z -Rb -rm -J ./ 
+FFLAGS=  -h dynamic -h pic,noomp -O0 -eZm -e0Z -Rb -rm -J ./ 
+FFLAGS=  -h dynamic -h pic,noomp -eZm -e0Z  -Rb -rm -J ./ 
+#CFLAGS= 
+CFLAGS= -mcmodel=medium -Mlarge_arrays
+CFLAGS= 
+#CPP= pgcc
+CPP= pgcc -mcmodel=medium -Mlarge_arrays
+# ----------------------------------

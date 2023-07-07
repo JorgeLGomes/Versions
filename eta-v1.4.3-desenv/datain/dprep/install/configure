@@ -1,0 +1,16 @@
+#!/bin/bash
+
+cd ../
+DPREP=`pwd`
+cd $DPREP/install
+
+cat Makefile.in | sed s:root:$DPREP: > Makefile
+
+# cat ../bin/dprep.sh.in | sed s:root:$DPREP: > ../bin/dprep.sh
+# chmod +x ../bin/dprep.sh
+# cd ../src/configure
+# `tarch`
+
+rm $DPREP/exe/*
+
+exit 0

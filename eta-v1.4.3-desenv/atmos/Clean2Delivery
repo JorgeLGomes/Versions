@@ -1,0 +1,86 @@
+#!/bin/bash -x
+
+cd ./exe
+rm -f *
+cd ../lib
+rm -f *
+cd ../install
+rm -f Makefile
+cd ../src/configure
+cd ../etafcst
+make clean
+rm -f MODULE_PARMETA.f90
+rm -f makefile
+
+cd ../post/IndiceTempSeveras
+make clean
+
+cd ../copygb
+make clean
+
+cd ../latlon2ll
+make clean
+rm -f variables.f90
+
+cd ../post0
+make clean
+rm -f parmeta
+rm -f parmeta.in
+
+cd ../post_new
+make clean
+rm -f makefile
+rm -f parmeta
+rm -f parmeta.in
+
+cd ../profile
+make clean
+rm -f parmeta.f90
+
+cd ../quilt
+make clean
+rm -f parmeta
+
+cd ../sndp
+make clean
+rm -f parmeta
+
+cd ../staids
+make clean
+rm -f STALST.f
+rm -f parmeta
+rm -f stalst_add.txt
+
+cd ../../prep/initbc
+make clean
+
+cd ../topo
+make clean
+
+cd ../veg
+make clean
+rm -f parmetaveg
+
+cd ../newsoil
+make clean
+rm -f parmetasoil
+
+cd ../sst
+make clean
+rm -f MODULE_PARMCONF.f90
+
+cd ../util
+make clean
+
+cd ../vgreen
+make clean
+rm -f MODULE_PARMCONF.f90
+
+cd ../../include
+rm -f parmeta
+rm -f parmeta.in
+
+cd ../../install/.EtaModelInstallDir
+rm -f *
+
+

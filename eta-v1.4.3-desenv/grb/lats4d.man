@@ -1,0 +1,285 @@
+  <TITLE>UNIX man pages : lats4d.man ()</TITLE>
+  <BODY BACKGROUND=grid.gif> 
+<PRE><font face="Verdana, Arial, Helvetica" color=#0000ff><H2>NAME</H2></font>
+
+     lats4d - LATS for Dummies (Version 1.0.Beta.8 of 9 Feb 1999)
+
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>SYNOPSIS</H2></font>
+
+     lats4d  [-i fn] [-o fn] [-cal calendar] [-center ctr] 
+             [-format fmt] [-ftype ctl|sdf|xdf] [-freq ...] [-h] 
+             [-grid type] [-lat y1 y2] [-levs ...] [-lon x1 x2] 
+             [-model mod] [-mean] [-precision nbits] [-table tab] 
+             [-time t1 t2 [tincr]] [-v] [-vars ...] [-q] 
+
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>DESCRIPTION</H2></font>
+
+     A minimum fuss gs script for writing NetCDF, HDF-SDS or 
+     GRIB files from GrADS using the PCMDI LATS interface 
+     (http://www-pcmdi.llnl.gov).  This script can serve as a
+     general purpose file conversion and subsetting utility.
+     Any GrADS readable file (GrADS IEEE, GSFC Phoenix, GRIB, 
+     NetCDF or HDF-SDS) can be subset and converted to GRIB, 
+     NetCDF or HDF-SDS using a single command line.
+     
+     When invoked without arguments this script will create a
+     COARDS compliant NetCDF or HDF-SDS file named 
+     "grads.lats.nc", with all the contents of the default 
+     file (all variables, levels, times). The file name and 
+     several other attributes can be customized at the command
+     line, see OPTIONS below.
+     
+     NetCDF files are obtained by running this script under the
+     executable "gradsnc".  HDF-SDS files can be produced with
+     the "gradshdf" executable. Notice that the classic version
+     of grads, "gradsc", does not include support for LATS and
+     therefore cannot be used with lats4d. This script requires
+     GrADS Version 1.7.beta.9 or later.
+
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>OPTIONS</H2></font>
+
+     -i      fn              input file name; it can be any
+                             of the following:
+                             - an ASCII control (ctl) file
+                               used for GRIB and IEEE files
+                             - a binary NetCDF file/template
+                             - a binary HDF-SDS file/template
+                             - an ASCII data descriptor file (ddf)
+                               used for non-COARDS compliant
+                               NetCDF/HDF-SDS files through
+                               the "xdfopen" command
+                             If the option "-ftype" is not
+                             specified lats4d attempts to
+                             determine the file type using
+                             a heuristic algorithm.
+                             NOTE:  When the option "-i" is 
+                             specified a GrADS "reinit" is 
+                             issued before the file is opened.
+                             For NetCDF/HDF-SDS templates in
+                             GrADS consult the SDFopen home
+                             page listed under SEE ALSO
+
+     -o      fn              output (base) file name; default: 
+                             "grads.lats"
+
+     -cal    calendar        calendar type: "standard", "noleap", 
+                             "clim", or "climleap"; default: 
+                             "standard"
+
+     -center ctr             center, e.g., PCMDI, GSFC, NCEP, etc
+
+     -format fmt             LATS file format: coards, grib or 
+                             grads_grib; specify "grads_grib"
+                             instead of "grib" for getting ctl
+                             and gribmap files as well
+
+    -ftype ctl|sdf|xdf       Specifies the input file type:
+                             ctl  standard GrADS control (ctl)
+                                  file used for IEEE and GRIB 
+                                  files
+                             sdf  COARDS compliant NetCDF/HDF-SDS
+                                  binary data file
+                             xdf  data descriptor file (ddf)
+                                  used for non-COARDS compliant
+                                  NetCDF/HDF-SDS files through
+                                  the "xdfopen" command
+                             By default lats4d attempts to 
+                             determine the file type using a
+                             heuristic algorithm; use this
+                             option if lats4d fails to properly
+                             detect the input file type
+                             
+     -freq  n unit           Time frequency of the input file.
+                             LATS4D usually detects this from
+                             the GrADS metadata, but sometimes
+                             it fails with an error message.
+                             In such cases use this option.
+                             Example: -freq 6 hourly
+                             NOTE: unlike GrADS, LATS does not
+                             support time frequency in minutes
+                             
+     -grid type              Grid type: linear, gaussian or
+                             generic; default: linear
+                             
+     -h                      displays this man page
+
+     -lat    y1 y2           latitude range, e.g., "-30 30" for 
+                             30S thru 30N;  default: latitude 
+                             dimension environment
+
+     -levs   lev1 ... levN   list of levels; default: all levels
+
+     -lon    x1 x2           longitude range, e.g., "-50 20" for 
+                             50W thru 20E; default: longitude 
+                             dimension environment
+
+     -mean                   saves time mean to file; the actual
+                             averaging period is specified with
+                             the "-time" option; the "tincr" 
+                             parameter is the time increment
+                             for the average (see GrADS ave()
+                             function)
+
+     -model  mod             model name, e.g., GEOS/DAS
+
+     -precision nbits        specify the number of bits of
+                             precision when storing in GRIB.
+                             This option is only used when
+                             lats4d automatically generates
+                             a parameter table file (see option
+                             -table below), and the output
+                             format is "grib" or "grads_grib".
+                             Default: nbits = 16
+
+     -table  tab             LATS parameter table file, e.g., 
+                             "dao.lats.table". If the table name
+                             starts with "@" (e.g., @my.table)
+                             then lats4d automatically generates
+                             a LATS parameter table appropriate
+                             for the current file and saves it 
+                             to a file; the file name in this
+                             case is the same as "tab" with the
+                             @ character removed (e.g., my.table).
+                             Specify tab as "=" for using the
+                             internal LATS parameter table.
+                             See below for additional info on
+                             parameter tables.
+                             Default: @.grads.lats.table
+
+     -time   t1 t2 [tincr]   time range and time increment in 
+                             units of the "delta t" in the
+                             input file; "tincr" is optional;
+                             Example: "0z1dec91 18z31dec91 2"
+                                       to write every other 
+                                       time step
+                             Defaults: (t1,t2) is taken from 
+                             the time dimension environment,
+                             and tincr=1. Note: enter "= ="
+                             for keeping the default values
+                             for (t1,t2) while specifying tincr
+
+     -v                      verbose mode
+
+     -vars   var1 ... varN   list of variables; default: all 
+                             variables on the current file will
+                             be written to the output file
+
+     -q                      quits GrADS upon return
+     
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>LATS PARAMETER TABLES</H2></font>
+     
+     LATS maintains an internal parameter table that prescribes
+     variable names, description, units, datatype, basic
+     structure (e.g., upper air or surface), and compression
+     (GRIB options). These descriptors are inferred from the
+     parameter name only, and thus most of the metadata needed
+     to write GRIB and/or netCDF data are located in the
+     parameter table and need not be specified at the command
+     line. The option "-table" is provided to override the 
+     internal table with an external parameter file. For
+     additional information on LATS parameter tables
+     consult http://www-pcmdi.llnl.gov/software/lats/.
+
+     The only inconvenience of this approach is that variables
+     names being written to file must match those defined in 
+     this internal parameter table (which is essentially the 
+     same as the "AMIPS2" LATS table, see URL above).
+     To circumvent this problem lats4d can automatically
+     generate a parameter table based on the current file
+     metadata. Since GrADS keeps no units or GRIB packing
+     information, this parameter file sets the units entry
+     to blank and uses defaults for the GRIB packing parameters.
+     The default GRIB packing algorithm is "16-bit fixed width 
+     compression" and produces GRIB files which are about half
+     the size of NetCDF/HDF-SDS files. The option "-precision"
+     allows the user to define the number of bits of precision
+     at the command line; see EXAMPLES ex2a,b,c below.
+     If you care about having proper metadata written to
+     your file or need more efficient GRIB packing then you can 
+     either change your variable names to match those in the 
+     internal LATS table, or customize an existing LATS parameter
+     table; see URL above for sample parameter tables.
+     
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>LATS QUALITY CONTROL WARNINGS</H2></font>
+     
+     Quality control (QC) information is included in some 
+     LATS parameter tables to help the user ensure that their
+     data is being written properly. In such cases, if LATS
+     detects suspect data it writes a warning message to the
+     screen and saves additional information in a log file.
+     Consult the LATS home page for additional information.
+     
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>EXAMPLES</H2></font>
+
+     Download files "model.ctl", "model.gmp" and "model.grb"
+     from http://dao.gsfc.nasa.gov/software/grads/lats4d/.
+     Then start "gradsnc" or "gradshdf" and try these,
+     carefully examining the files produced:
+     
+     lats4d -h
+     lats4d -v -q -i model -o ex1 
+     lats4d -v -q -i model -o ex2a -format grads_grib
+     lats4d -v -q -i model -o ex2b -format grads_grib -precision 8
+     lats4d -v -q -i model -o ex2c -format grads_grib -precision 32
+     lats4d -v -q -i model -o ex3 -levs 700 500 -vars ua va
+     lats4d -v -q -i model -o ex4 -time 1jan1987 3jan1987
+     lats4d -v -q -i model -o ex5 -time = = 2
+     lats4d -v -q -i model -o ex6 -mean
+     lats4d -v -q -i model -o ex7 -mean -time = = 2
+     lats4d -v -q -i model -o ex8 -lat 20 70 -lon -140 -60
+
+     Note: the "-q" option above is to make sure you
+           restart GrADS; see BUGS below. You may want to
+           enter these from your OS shell, e.g.,
+
+     % gradsnc -blc "lats4d -v -q -i model -o ex1"
+
+    The <A HREF="http://www.ntua.gr/cgi-bin/man-cgi?sh+1">sh(1)</A> script "lats4d" allows you to enter lats4d
+    options directly from the Unix command line, e.g.,
+
+    % lats4d -v -i model -o ex1 
+
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>BUGS</H2></font>
+
+     Sometimes lats4d will only work if you exit and
+     restart GrADS.
+
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>SEE ALSO    </H2></font>
+
+     GrADS   http://grads.iges.org/grads/   
+     LATS    http://www-pcmdi.llnl.gov/software/lats
+     LATS4D  http://dao.gsfc.nasa.gov/software/grads/lats4d
+     SDFopen http://www.cdc.noaa.gov/~hoop/grads.html
+     XDFopen http://www.cdc.noaa.gov/~hoop/xdfopen.shtml
+     NetCDF  http://www.unidata.ucar.edu/packages/netcdf/
+     HDF     http://hdf.ncsa.uiuc.edu/
+     GRIB    ftp://ncardata.ucar.edu/docs/grib/prev-vers/guide.txt
+             http://www.wmo.ch/web/www/reports/Guide-binary-2.html
+     
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>COPYRIGHT</H2></font>
+
+     Copyright (c) 1998-1999 A. da Silva
+     Permission is granted to copy, modify and distribute this
+     software provided it is not sold for profit, and provided 
+     this notice is included. 
+
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>NO WARRANTY</H2></font>
+     
+     Because lats4d is provided free of charge, it is provided
+     "as is" WITHOUT WARRANTY OF ANY KIND, either expressed or
+     implied, including, but not limited to, the implied
+     warranties of merchantability and fitness for a particular
+     purpose. USE AT YOUR OWN RISK.
+     
+<font face="Verdana, Arial, Helvetica" color=#0000ff><H2>CREDITS</H2></font>
+
+    Arlindo da Silva (NASA/GSFC) wrote the lats4d.gs script. 
+    Mike Fiorino (PCMDI/LLNL) wrote the LATS interface to
+    GrADS. Robert Drach, Mike Fiorino and Peter Gleckler
+    (PCMDI/LLNL) wrote the LATS library.
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

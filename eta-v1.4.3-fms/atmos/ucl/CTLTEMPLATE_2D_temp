@@ -1,0 +1,47 @@
+DSET ^NARQ
+OPTIONS TEMPLATE 
+UNDEF -9999.
+TITLE 29help Days of Sample Model Output 
+XDEF  ptx LINEAR  lonoeste   0.01
+YDEF  pty LINEAR  latsul   0.01
+ZDEF 1 LEVELS 1020 
+TDEF   NTIME LINEAR LLTIME INTHR
+VARS 37 
+PSLM    0  99     Mesinger M S L Pressure  (hPa)
+PSLC    0  99     Surface Pressure         (hPa)
+TP2M    0  99     Shelter Temperature      (K)
+MXTP    0  99     Max Temperature          (K)
+MNTP    0  99     Min Temperature          (K)
+DP2M    0  99     Shelter Dew Temp.        (K)
+UR2M    0  99     Relative Humidity 2m     (%)
+U10M    0  99     U 10m                    (m/s)
+V10M    0  99     V 10m                    (m/s)
+U100    0  99     U 100m                   (m/s)
+V100    0  99     V 100m                   (m/s)
+PREC    0  99     Total  6h Precip.        (m)
+PRCV    0  99	  Conv   6h Precip.	   (m)
+PRGE    0  99	  Large Scl  6h Prec.	   (m)
+NEVE    0  99	  Snowfall 6h		   (m)
+CLSF    0  99	  Time Ave Sfc Lat Ht Flx  ()
+CSSF    0  99	  Time Ave Sfc Sen Ht Flx  ()
+GHFL    0  99     Time Ave Ground  Ht Flx  ()
+TSFC    0  99     Sfc (skin) Temperature   (K)
+TGSC    0  99     Soil Temperature 0.1m    (K)
+TGRZ    0  99     Soil Temperature 2.0m    (K)
+USSL    0  99     Soil Moisture Cont. 0.1m (0-1)
+UZRS    0  99     Soil Moisture Cont. 2.0m (0-1)
+SMAV    0  99     Soil Moisture Avail      ()
+RNOF    0  99     Storm Sfc Rnoff 6h       ()
+RNSG    0  99     Storm Sfc Rnoff SG 6h    ()
+USST    0  99	  Sfc  U wind Stress	   ()
+VSST    0  99	  Sfc  V wind Stress	   ()
+LWNV    0  99     Low cloud fraction       ()
+MDNV    0  99     Mid cloud fraction       ()
+HINV    0  99     High cloud fraction      ()
+OCIS    0  99     Ave Incmg Sfc SW Rad     (W/m2)
+OLIS    0  99     Ave Incmg Sfc LW Rad     (W/m2)
+OCES    0  99     Ave Outgo Sfc SW Rad     (W/m2)
+OLES    0  99     Ave Outgo Sfc LW Rad     (W/m2)
+ROCE    0  99     Ave Outgo TOA SW Rad     (W/m2)
+ROLE    0  99     Ave Outgo TOA LW Rad     (W/m2)
+ENDVARS

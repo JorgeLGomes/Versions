@@ -1,0 +1,4 @@
+FC = f90
+CC = cc -P
+FFLAGS = -dW
+CFLAGS = 

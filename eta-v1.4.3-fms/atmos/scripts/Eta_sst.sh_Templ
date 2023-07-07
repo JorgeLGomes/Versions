@@ -1,0 +1,45 @@
+#!/bin/bash 
+
+# VARIAVEIS
+
+cd ${Eta_run}
+
+cat << EOF > ${Eta_run}/NAMELIST_RES_CONF
+ &RES_CONF_IN
+  RES_CONF = ${resol}
+ &END
+EOF
+cat << EOF > ${Eta_run}/EtaSST.nqs
+#!/bin/bash
+# PbsSlurm
+Eta_run=${Eta_run}
+Eta_fix_conf=${Eta_fix_conf}
+Eta_ucl=${Eta_ucl}
+Eta_exe=${Eta_exe}
+cd ${Eta_run}
+ln -s -f \${Eta_fix_conf}/etatopo.dat           \${Eta_run}/etatopo.dat
+ln -s -f \${Eta_ucl}/NAMELIST_SSTGR_${sstres}  \${Eta_run}/NAMELIST_SSTGR
+ln -s -f \${Eta_run}/NSSTFLDS.txt              \${Eta_run}/fort.53
+ln -s -f \${Eta_run}/sst2_EGRD_${Run_Date}.bin \${Eta_run}/fort.57
+ln -s -f \${Eta_run}/sst_${Run_Date}.bin       \${Eta_run}/fort.59
+echo "Starting eta sst creation..."
+ExecCmd1P \${Eta_exe}/sst.x > \${Eta_run}/sst.out
+err=$?
+if [ \$err -ne 0 ] ; then
+  exit 1
+fi
+sstmnthlyUP=`echo ${sstmnthly}| tr '[:lower:]' '[:upper:]'`
+if [ "\${sstmnthlyUP}" == ".TRUE." ] ; then
+    echo "${sstYYYY} ${sstMM} ${sstDD}" >> ${Eta_run}/NSSTFLDS.txt
+else
+    sstYYYY=`echo ${Run_Date} | cut -c 1-4`
+    sstMM=`echo ${Run_Date} | cut -c 5-6`
+    sstDD=`echo ${Run_Date} | cut -c 7-8`
+    echo "\${sstYYYY} \${sstMM} \${sstDD}" >> ${Eta_run}/NSSTFLDS.txt
+fi
+exit 0
+EOF
+chmod 755 ${Eta_run}/EtaSST.nqs
+${Eta_run}/EtaSST.nqs
+
+

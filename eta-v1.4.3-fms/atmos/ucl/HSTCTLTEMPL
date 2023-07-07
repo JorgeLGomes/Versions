@@ -1,0 +1,25 @@
+DSET ^HSTARQ
+OPTIONS TEMPLATE sequential
+UNDEF -9999.
+TITLE SAmr 40km/38lyr Regional Model - Time history
+XDEF NXX LINEAR     1      1
+YDEF   1 LINEAR     1      1
+ZDEF   2 LINEAR     1000   50
+TDEF  NTIME LINEAR HSTTIME 01hr
+VARS  15
+slp     0  99     Mesinger M S L Pressure  (Pa)
+ts      0  99     Sfc (skin) Temperature   (K)
+ttprec  0  99     Total 1-hr Accum. Precip.(mm)
+tsh     0  99     Shelter Temperature      (K)
+ocis    0  99     Ave Incmg Sfc SW Rad (W/m2)
+olis    0  99     Ave Incmg Sfc LW Rad (W/m2)
+qs      0  99     Shelter Specific Humid.  (kg/kg)
+rh      0  99     Shelter Relative Humid.  (%)
+uanem   2  99     U 10m                    (m/s)
+vanem   2  99     V 10m                    (m/s)
+cfracl  0  99     low cld fraction         (%)
+cfracm  0  99     mid cld fraction         (%)
+cfrach  0  99     hih cld fraction         (%)
+u       2  99     U first level            (m/s)
+v       2  99     V first level            (m/s)
+ENDVARS

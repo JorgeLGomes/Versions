@@ -1,0 +1,30 @@
+
+.SILENT:
+
+RM = rm -f
+
+# Define compiler flags from machine dependent make.inc.
+
+FC = pgf90 -C
+
+# Define main routine.
+
+MAIN = gera_sondagens_modelo_grib.f90
+
+# Define executable.
+include ../../configure/make.inc
+EXE = ../../../exe/gera_sondagens_modelo_grib.exe
+
+W3LIB    = ../../../libraries/w3lib
+BACIO    = ../../../libraries/bacio
+
+LIBS = $(W3LIB) $(BACIO)
+# Default target
+
+
+$(EXE): $(MAIN)
+	$(FC) $(FFLAGS) $(MAIN) $(LIBS) -o $@
+	$(RM) *.o
+
+exe: $(EXE)
+

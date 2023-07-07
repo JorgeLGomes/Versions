@@ -1,0 +1,35 @@
+#!/bin/bash 
+#
+#
+
+# VARIAVEIS
+cd ${Eta_scr}
+
+
+cd ${Eta_run}
+dir_sst=${datain}/sst/ETAwrk/${sstsource}/${Run_Date}
+sstflgUP=`echo ${sstmnthly}| tr '[:lower:]' '[:upper:]'`
+if [ "${sstflgUP}" != ".TRUE." ] ; then
+   ContDays=0
+   while  [ "${ContDays}" != "10" ] ; do
+     sst_rundate=`${Eta_util}/caldate.3.0 ${Run_Date} - ${ContDays}d 'yyyymmddhh'`
+     dir_sst=${datain}/sst/ETAwrk/${sstsource}/${sst_rundate}
+     if  [[ -s ${dir_sst}/${sstsource}_sst_${sst_rundate}.bin ]] ; then
+        cp ${dir_sst}/${sstsource}_sst_${sst_rundate}.bin ${Eta_run}/sst_${Run_Date}.bin
+        exit 0
+     fi
+     let ContDays=${ContDays}+1
+  done
+  echo "sst file not found!"
+  ${Verif_Arq} ${dir_sst}/${sstsource}_sst_${sst_rundate}.bin
+#  exit 1
+else
+  if  [[ -s ${dir_sst}/${sstsource}_sst_${Run_Date}.bin ]] ; then
+     cp ${dir_sst}/${sstsource}_sst_${Run_Date}.bin ${Eta_run}/sst_${Run_Date}.bin
+     cp ${dir_sst}/NTimes.txt ${Eta_run}/NTimes.txt
+     exit 0
+  fi
+  echo "sst file not found!"
+  ${Verif_Arq} ${dir_sst}/${sstsource}_sst_${sst_rundate}.bin
+  #exit 1
+fi

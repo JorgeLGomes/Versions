@@ -1,0 +1,91 @@
+#!/bin/bash -x
+# VARIAVEIS
+cd ${Eta_run}
+export F_SETBUF=16384
+yy=`date +%y`
+mm=`date +%m`
+dd=`date +%d`
+
+#rm EGRD* latlon_* lmbc_*
+###################################################################
+#
+#  head is used to define symbolic links.  On HP's it should be "ftn"
+#  Believe most other machines (SGI's and Suns, at least) use "fort."
+#
+head="fort."
+#
+#######################
+
+T1=`date +%s%N`               
+
+out_dir=`pwd`
+export COMSP=${out_dir}/
+echo $COMSP			      
+export tmmark=t00s		  
+
+ln -s -f ${Eta_run}/cnst.file        ${head}12
+ln -s -f ${Eta_ucl}/eta_staids.parm  ${head}15
+ln -s -f ${Eta_run}/profdat          ${head}63
+ExecCmd1P ${Eta_exe}/staids.x > out6new
+
+rm ${head}*
+rm profilm.c1.${tmmark}
+
+let finhr=$Fct+01
+echo  "$Fcts $finhr 01" > namelist.new
+
+### Post0 job ########
+
+ln -s -f ${Eta_run}/cnst.file            ${head}12
+ln -s -f ${Eta_ucl}/bcexdata.parm.noext  ${head}17
+ln -s -f ${Eta_run}/profdat              ${head}19
+ln -s -f ${Eta_run}/profilm.c1.${tmmark} ${head}76
+ExecCmd1P ${Eta_exe}/post0.x < namelist.new
+
+      
+ETA_X_PROFILE=${Eta_exe}/profile.x       
+
+let Last_fctp1=${Fct}+1
+HSTBIN=HST${Run_Date}.bin
+HSTCTL=HST${Run_Date}.ctl
+cd ${Eta_run}
+
+ln -sf ${HSTBIN} fort.30 
+ln -sf profilm.c1.t00s fort.66
+
+NSTD=`wc -l ${Eta_ucl}/eta_staids.parm|awk '{print $1}'`
+echo ${NSTD}' '${Last_fctp1} > ${Eta_run}/STNSZ
+ExecCmd1P ${ETA_X_PROFILE} <${Eta_run}/STNSZ
+
+
+T2=`date +%s%N`
+
+TEMPO=`echo ${T2} - ${T1} | bc -l`
+TEMPO=`echo ${TEMPO} / 1000000000 | bc -l`
+
+cat << EOF >> ${Eta_home_conf}/scripts/relatorios/relatorio_${Run_Date}.txt
+
+# Tempo de processamento do Prof -----------------------
+Prof = ${TEMPO}s
+# --------------------------------------------------------
+EOF
+
+
+
+cdate=${Eta_util}/caldate.3.0
+TIMEOUT=`${cdate} ${Run_Date} + 0h "hhZddmmmyyyy"`
+NTIME=${Last_fctp1}
+cat ${Eta_ucl}/HSTCTLTEMPL|sed "s/HSTARQ/${HSTBIN}/g" >${Eta_run}/CTL
+cat ${Eta_run}/CTL|sed "s/NXX/${NSTD}/g" >${Eta_run}/CTL2
+cat ${Eta_run}/CTL2|sed "s/NTIME/${NTIME}/g" >${Eta_run}/CTL
+cat ${Eta_run}/CTL|sed "s/HSTTIME/${TIMEOUT}/g" >${Eta_run}/${HSTCTL}
+
+
+# Save Arquives
+cp ${Eta_run}/profilm.c1.${tmmark} /stornext/proj/grupos/eta/meta/Eta15km_novo_dominio/Prof/profc1.${Run_Date}
+cp ${Eta_run}/${HSTCTL}/stornext/proj/grupos/eta/meta/Eta15km_novo_dominio/HSTBINCTL/.
+cp ${Eta_run}/${HSTBIN}/stornext/proj/grupos/eta/meta/Eta15km_novo_dominio/HSTBINCTL/.
+
+date                                                                            
+echo "End of Output Job"
+exit
